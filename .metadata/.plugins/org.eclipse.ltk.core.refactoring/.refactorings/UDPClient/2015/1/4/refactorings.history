@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move 3 elements to &apos;UDPClient/src/UDPChat.Client&apos;&#x0D;&#x0A;- Original project: &apos;UDPClient&apos;&#x0D;&#x0A;- Destination element: &apos;UDPClient/src/UDPChat.Client&apos;&#x0D;&#x0A;- Original elements:&#x0D;&#x0A;     Client.java&#x0D;&#x0A;     ServerConnection.java&#x0D;&#x0A;     ChatGUI.java&#x0D;&#x0A;- Update references to refactored element" description="Move compilation units" destination="/src&lt;UDPChat.Client" element1="/src&lt;{Client.java" element2="/src&lt;{ServerConnection.java" element3="/src&lt;{ChatGUI.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.move" policy="org.eclipse.jdt.ui.moveResources" qualified="false" references="true" stamp="1421677299853" units="3" version="1.0"/>
+</session>
