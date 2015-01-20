@@ -33,7 +33,6 @@ public class ClientConnection {
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			// TODO: send a message to this client using socket.
-			
 		} else {
 			// Message got lost
 		}

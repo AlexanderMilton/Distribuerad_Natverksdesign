@@ -36,7 +36,7 @@ public class Server {
 		try {
 			m_socket = new DatagramSocket(portNumber);
 		} catch (SocketException e) {
-			System.err.println("Error: failed to create socket.");
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

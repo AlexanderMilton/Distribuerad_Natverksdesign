@@ -23,10 +23,10 @@ public class ServerConnection {
 
 	public ServerConnection(String hostName, int port) {
 		m_serverPort = port;
-		m_serverAddress = 
-		
+
 		// TODO:
-		// * get address of host based on parameters and assign it to m_serverAddress
+		// * get address of host based on parameters and assign it to
+		// m_serverAddress
 		// * set up socket and assign it to m_socket
 
 	}
@@ -36,16 +36,14 @@ public class ServerConnection {
 		// * marshal connection message containing user name
 		// * send message via socket
 		// * receive response message from server
-		// * unmarshal response message to determine whether connection was successful
+		// * unmarshal response message to determine whether connection was
+		// successful
 		// * return false if connection failed (e.g., if user name was taken)
-		
-		
 		return true;
 	}
 
 	public String receiveChatMessage() {
 		// TODO:
-		
 		// * receive message from server
 		// * unmarshal message if necessary
 
