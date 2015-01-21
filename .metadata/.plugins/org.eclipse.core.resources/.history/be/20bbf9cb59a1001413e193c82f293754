@@ -7,7 +7,6 @@ package UDPChat.Server;
 // Maintained by Marcus Brohede
 //
 
-import java.io.IOException;
 import java.net.*;
 //import java.io.*;
 import java.util.ArrayList;
@@ -20,7 +19,7 @@ public class Server {
 
 	public static void main(String[] args){
 		if(args.length < 1) {
-			System.err.println("Usage: java -jar Server.jar <portnumber>");
+			System.err.println("Usage: java Server portnumber");
 			System.exit(-1);
 		}
 		try {
@@ -33,8 +32,7 @@ public class Server {
 	}
 
 	private Server(int portNumber) {
-		// TODO: 
-		// - create a socket, attach it to port based on portNumber, and assign it to m_socket
+		// TODO: create a socket, attach it to port based on portNumber, and assign it to m_socket
 		try {
 			m_socket = new DatagramSocket(portNumber);
 		} catch (SocketException e) {
@@ -47,48 +45,9 @@ public class Server {
 		System.out.println("Waiting for client messages... ");
 
 		do {
-			byte[] buf = new byte[256];
-			DatagramPacket packet = new DatagramPacket(buf, buf.length);
-			
-			try {
-				m_socket.receive(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.err.println("Error: buggery receiveing message");
-			}
-			
-			String message = unpack(packet);
-			
-			switch(message.substring(0, 1)){
-
-			case "00":		// Broadcast global message
-				broadcast(message.substring(1));
-				break;
-				
-			case "01":		// Handshake
-				// addClient
-				break;
-				
-			case "02":		// Private message
-				// sendPrivateMessage()
-				break;
-				
-			case "03":		// List request
-				// return list
-				break;
-				
-			case "04":		// Leave request
-				// disconnect user
-				break;
-				
-			default:
-				System.err.println("Error: unknown message type");
-			}
-				
-			
 			// TODO: Listen for client messages.
 			// On reception of message, do the following:
-			// - Unmarshal message
+			// * Unmarshal message
 			// * Depending on message type, either
 			//    - Try to create a new ClientConnection using addClient(), send 
 			//      response message to client detailing whether it was successful
@@ -124,18 +83,5 @@ public class Server {
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			itr.next().sendMessage(message, m_socket);
 		}
-	}
-
-	public DatagramPacket pack(String name, String msg, InetAddress iadd, int port){
-		// Append message code and name to message, marshal packet and send it to assigned address and port
-		String message = name + msg;
-		byte[] data = message.getBytes();
-		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
-		
-		return packet;
-	}
-	
-	public String unpack(DatagramPacket handshake){		
-		return new String(handshake.getData(), 0, handshake.getLength());
 	}
 }

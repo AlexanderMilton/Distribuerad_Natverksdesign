@@ -47,8 +47,7 @@ public class Server {
 		System.out.println("Waiting for client messages... ");
 
 		do {
-			byte[] buf = new byte[256];
-			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			DatagramPacket packet = null;
 			
 			try {
 				m_socket.receive(packet);

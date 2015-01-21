@@ -42,12 +42,14 @@
 		<item value="600" key="width"/>
 	</section>
 	<section name="FatJarPackageWizard">
-		<item value="\\hsnas3\StudentHome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign\UDPClient\Client.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
-		<item value="Client - UDPClient" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
-		<item value="\\hsnas3\studenthome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
+		<item value="P:\GitHub\Distribuerad_Natverksdesign\UDPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="Client - UDPServer" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="\\hsnas3\studenthome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign.xml" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
+			<item value="P:\GitHub\Distribuerad_Natverksdesign\UDPServer\Server.jar"/>
+			<item value="P:\GitHub\Distribuerad_Natverksdesign\UDPClient\Client.jar"/>
 			<item value="\\hsnas3\StudentHome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign\UDPClient\Client.jar"/>
 			<item value="\\hsnas3\StudentHome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign\UDPServer\Server.jar"/>
 			<item value="\\hsnas3\StudentHome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign\Hello World\b13alemi.jar"/>

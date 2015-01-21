@@ -13,7 +13,7 @@ public class Client implements ActionListener {
 	public static void main(String[] args) {
 		if (args.length < 3) {
 			System.err
-					.println("Usage: java -jar Client.jar <serverhostname> <serverportnumber> <username>");
+					.println("Usage: java Client serverhostname serverportnumber username");
 			System.exit(-1);
 		}
 
@@ -57,21 +57,7 @@ public class Client implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		// Since the only possible event is a carriage return in the text input field,
 		// the text in the chat input field can now be sent to the server.
-		String input = m_GUI.getInput();
-		
-		// Forward slash expects a command with our without argument and message
-		if (input.charAt(0) == '/')
-		{
-			String[] stringArray = input.split(" ", 2);
-			m_connection.sendChatMessage(m_name, stringArray[0], stringArray[1], stringArray[2]);
-		}
-		
-		// Messages without commands are treated as broadcasts
-		else
-		{
-			m_connection.sendChatMessage(m_name, input);
-		}
-		
+		m_connection.sendChatMessage(m_GUI.getInput());
 		m_GUI.clearInput();
 	}
 }
