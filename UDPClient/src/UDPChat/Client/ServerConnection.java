@@ -23,7 +23,7 @@ public class ServerConnection {
 
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
-	private DatagramSocket m_socket = null;
+	private DatagramSocket m_socket;
 
 	public ServerConnection(String hostName, int port) {
 		// Assign port
@@ -39,6 +39,7 @@ public class ServerConnection {
 		
 		// Create socket at assigned port
 		try {
+			m_socket = new DatagramSocket();
 			m_socket = new DatagramSocket(m_serverPort);
 		} catch (SocketException e) {
 			e.printStackTrace();
@@ -64,7 +65,7 @@ public class ServerConnection {
 			System.err.println("Error: username must be at least one character.");
 			return false;
 		}
-		
+
 		// Pack a message with code 01 (handshake)
 		DatagramPacket handshake = pack(name, "01", m_serverAddress, m_serverPort);
 		
@@ -188,14 +189,18 @@ public class ServerConnection {
 	public DatagramPacket pack(String name, String msg, InetAddress iadd, int port){
 		// Append message code and name to message, marshal packet and send it to assigned address and port
 		String message = name + msg;
-		byte[] data = message.getBytes();
-		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
-		
-		return packet;
+		byte[] data = new byte[256];
+		data = message.getBytes();
+		return new DatagramPacket(data, message.length(), iadd, port);
 	}
 	
-	public String unpack(DatagramPacket handshake){		
-		return new String(handshake.getData(), 0, handshake.getLength());
+	public String unpack(DatagramPacket packet) {
+		return new String(packet.getData(), 0, packet.getLength());
 	}
 
 }
+
+
+// packet contains either:
+//	type 	sender_name 	message 	address 		port
+//	type 	argument 		message 	sender_name 	address 	port

@@ -2,4 +2,6 @@
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="java.net.SocketException"/>
 <fullyQualifiedTypeName name="java.net.DatagramPacket"/>
+<fullyQualifiedTypeName name="java.sql.Date"/>
+<fullyQualifiedTypeName name="java.util.Date"/>
 </qualifiedTypeNameHistroy>
