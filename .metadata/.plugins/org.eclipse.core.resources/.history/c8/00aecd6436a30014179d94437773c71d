@@ -67,7 +67,7 @@ public class ServerConnection {
 		}
 
 		// Pack a message with code 01 (handshake) and separator |
-		DatagramPacket handshake = pack("01" + "|" + name);
+		DatagramPacket handshake = pack("|01" + name);
 		
 		// Attempt to send and receive handshake		
 		try {
@@ -173,7 +173,7 @@ public class ServerConnection {
 		double failure = generator.nextDouble();
 		
 		// Copy the user's message, trim it and split it at each separator
-		String message = "00" + "|" + msg + name;	// Broadcast code "00"
+		String message = "|00" + "|" + msg + name;	// Broadcast code "00"
 		message.trim();
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {

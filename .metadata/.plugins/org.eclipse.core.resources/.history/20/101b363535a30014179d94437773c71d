@@ -67,7 +67,7 @@ public class ServerConnection {
 		}
 
 		// Pack a message with code 01 (handshake) and separator |
-		DatagramPacket handshake = pack("01" + "|" + name);
+		DatagramPacket handshake = pack("|01");
 		
 		// Attempt to send and receive handshake		
 		try {
@@ -173,7 +173,7 @@ public class ServerConnection {
 		double failure = generator.nextDouble();
 		
 		// Copy the user's message, trim it and split it at each separator
-		String message = "00" + "|" + msg + name;	// Broadcast code "00"
+		String message = "|00" + "|" + msg + name;	// Broadcast code "00"
 		message.trim();
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
@@ -203,16 +203,16 @@ public class ServerConnection {
 		byte[] data = new byte[256];
 		data = msg.getBytes();
 
-		System.out.println("Packed message :" + msg);
+		System.out.println(message);
 		
-		return new DatagramPacket(data, msg.length(), m_serverAddress, m_serverPort);
+		return new DatagramPacket(data, message.length(), m_serverAddress, m_serverPort);
 	}
 	
 	public String unpack(DatagramPacket packet) {
 		String receivedPacket = new String(packet.getData(), 0, packet.getLength());
 		String[] message = receivedPacket.split("\\|");
 		
-		System.out.println("Unpacked packet containing: " + receivedPacket);
+		System.out.println(receivedPacket);
 		
 		return message[0];
 	}
@@ -220,6 +220,6 @@ public class ServerConnection {
 }
 
 
-// packet contains either:		UPDATED: NO!
+// packet contains either:
 //	type 	sender_name 	message 	address 		port
 //	type 	argument 		message 	sender_name 	address 	port

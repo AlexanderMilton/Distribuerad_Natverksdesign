@@ -81,7 +81,6 @@ public class Server {
 					buf = response.getBytes();
 					packet = new DatagramPacket(buf, buf.length, address, port);
 					try {
-						System.out.println("Attempting to send packet containing: " + response);
 						m_socket.send(packet);
 					} catch (IOException e) {
 						System.err.println("Error: failed to send handshake response");
