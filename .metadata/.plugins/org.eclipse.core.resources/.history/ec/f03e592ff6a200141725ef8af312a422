@@ -66,15 +66,15 @@ public class Server {
 			int port = packet.getPort();
 			
 			// Split message into segments containing type, message and/or arguments
-			String[] messageComponent = message.split("\\|");
+			String[] messageComponent = message.split("÷");
 			
 			switch(messageComponent[0]){
 
-			case "|00":		// Broadcast global message
+			case "00":		// Broadcast global message
 				broadcast(message.substring(1));
 				break;
 				
-			case "|01":		// Handshake
+			case "01":		// Handshake
 				if (addClient(messageComponent[1], address, port))
 				{
 					String response = "OK";
@@ -94,15 +94,15 @@ public class Server {
 					
 				break;
 				
-			case "|02":		// Private message
+			case "02":		// Private message
 				// sendPrivateMessage()
 				break;
 				
-			case "|03":		// List request
+			case "03":		// List request
 				// return list
 				break;
 				
-			case "|04":		// Leave request
+			case "04":		// Leave request
 				// disconnect user
 				break;
 				

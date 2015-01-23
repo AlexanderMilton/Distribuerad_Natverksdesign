@@ -67,12 +67,12 @@ public class ServerConnection {
 		}
 
 		// Pack a message with code 01 (handshake) and separator |
-		DatagramPacket handshake = pack(name, "01");
+		DatagramPacket handshake = pack(name, "|01");
 		
 		// Attempt to send and receive handshake		
 		try {
 			m_socket.send(handshake);
-			receiveChatMessage();
+			m_socket.receive(handshake);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Error: failed to establish connection.");
@@ -101,22 +101,10 @@ public class ServerConnection {
 		
 	}
 
-	public String receiveChatMessage() {
-
-		byte[] buf = new byte[256];
-		DatagramPacket packet = new DatagramPacket(buf, buf.length);
-		
-		try {
-			m_socket.receive(packet);
-		} catch (IOException e) {
-			System.err.println("Error: client failed to receive packet.");
-			e.printStackTrace();
-		}
-		
+	public String receiveChatMessage(DatagramPacket packet) {
 		String message = unpack(packet);
 		
 		return message;
-		
 		// TODO:
 		// - receive message from server
 		// - unmarshal message if necessary
@@ -207,10 +195,7 @@ public class ServerConnection {
 	}
 	
 	public String unpack(DatagramPacket packet) {
-		String receivedPacket = new String(packet.getData(), 0, packet.getLength());
-		String[] message = receivedPacket.split("\\|");
-		
-		return message[0];
+		return new String(packet.getData(), 0, packet.getLength());
 	}
 
 }

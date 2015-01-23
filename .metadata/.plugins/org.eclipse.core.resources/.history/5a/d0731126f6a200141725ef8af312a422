@@ -69,9 +69,8 @@ public class Client implements ActionListener {
 		}
 		
 		// Messages without commands are treated as broadcasts
-		else if (input.length() > 0)
+		else
 		{
-		
 			m_connection.sendChatMessage(m_name, input);
 		}
 		

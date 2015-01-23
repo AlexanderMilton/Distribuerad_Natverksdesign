@@ -46,9 +46,9 @@ public class Client implements ActionListener {
 	private void listenForServerMessages() {
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
-		do {
-			m_GUI.displayMessage(m_connection.receiveChatMessage());
-		} while(true);
+		// do {
+		// 	m_GUI.displayMessage(m_connection.receiveChatMessage());
+		// } while(true);
 	}
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits
@@ -59,19 +59,16 @@ public class Client implements ActionListener {
 		// the text in the chat input field can now be sent to the server.
 		String input = m_GUI.getInput();
 		
-		char c = input.charAt(0);
-		
 		// Forward slash expects a command with our without argument and message
-		if (c == '/')
+		if (input.charAt(0) == '/')
 		{
 			String[] stringArray = input.split(" ", 2);
 			m_connection.sendChatMessage(m_name, stringArray[0], stringArray[1], stringArray[2]);
 		}
 		
 		// Messages without commands are treated as broadcasts
-		else if (input.length() > 0)
+		else
 		{
-		
 			m_connection.sendChatMessage(m_name, input);
 		}
 		
