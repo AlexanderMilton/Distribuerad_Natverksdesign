@@ -23,7 +23,8 @@ public class ServerConnection {
 
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
-	private DatagramSocket m_socket;
+	private DatagramSocket m_socket = null;
+	
 
 	public ServerConnection(String hostName, int port) {
 		// Assign port
@@ -39,12 +40,13 @@ public class ServerConnection {
 		
 		// Create socket at assigned port
 		try {
-			m_socket = new DatagramSocket();
 			m_socket = new DatagramSocket(m_serverPort, m_serverAddress);
 		} catch (SocketException e) {
 			e.printStackTrace();
 			System.err.println("Error: invalid port.");
 		}
+
+		System.out.println("Created socket at port " + m_serverPort + " and address " + m_serverAddress);
 		
 		// TODO:
 		// - get address of host based on parameters and assign it to m_serverAddress
@@ -72,14 +74,21 @@ public class ServerConnection {
 		// Attempt to send and receive handshake		
 		try {
 			m_socket.send(handshake);
-			receiveChatMessage();
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Error: failed to establish connection.");
 			return false;
+			
 		}
 		
-		// Unpack received handshake
+		// Receive handshake
+		try {
+			m_socket.receive(handshake);
+		} catch (IOException e) {
+			System.out.println("Failed to receive packet");
+			e.printStackTrace();
+		}
+		
 		String message = unpack(handshake);
 		
 		// Handshake successful
@@ -130,7 +139,7 @@ public class ServerConnection {
 		// if an argument is included, append and forward it
 
 		String type = null;
-		String message = comm + "|" + arg + "|" + msg + name;
+		String message = comm + "|" + arg + "|" + msg + "|" + name;
 		
 		switch(comm){
 		
@@ -173,7 +182,7 @@ public class ServerConnection {
 		double failure = generator.nextDouble();
 		
 		// Copy the user's message, trim it and split it at each separator
-		String message = "00" + "|" + msg + name;	// Broadcast code "00"
+		String message = "00" + "|" + msg + "|" + name;	// Broadcast code "00"
 		message.trim();
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {

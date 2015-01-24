@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.net.*;
 //import java.io.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 
 public class Server {
@@ -42,14 +41,20 @@ public class Server {
 			System.err.println("Error: failed to create socket.");
 			e.printStackTrace();
 		}
+		
+		System.out.println("Created socket at port " + portNumber);
+
 	}
 
 	private void listenForClientMessages() {
 		System.out.println("Waiting for client messages... ");
 
 		do {
+
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			
+			System.out.println("Attempting to receive packet... ");
 			
 			try {
 				m_socket.receive(packet);
@@ -57,6 +62,8 @@ public class Server {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			
+			System.out.println("Received client packet");
 			
 			// Unpack message
 			String message = unpack(packet);
@@ -75,6 +82,8 @@ public class Server {
 				break;
 				
 			case "|01":		// Handshake
+				System.out.println("message component[0]: " + messageComponent[0] + "message component[1]: " + messageComponent[1]);
+
 				if (addClient(messageComponent[1], address, port))
 				{
 					String response = "OK";
@@ -90,7 +99,7 @@ public class Server {
 				}
 				else
 				{
-					
+					System.err.println("Error: failed to add client");
 				}
 					
 				break;
