@@ -16,9 +16,9 @@ import java.util.Iterator;
 public class Server {
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
-	private DatagramSocket m_socket = null;
+	private DatagramSocket m_socket;
 
-	public static void main(String[] args){
+	public static void main(String[] args) {
 		if(args.length < 1) {
 			System.err.println("Usage: java -jar Server.jar <portnumber>");
 			System.exit(-1);
@@ -75,13 +75,13 @@ public class Server {
 			// Split message into segments containing type, message and/or arguments
 			String[] messageComponent = message.split("\\|");
 			
-			switch(messageComponent[0]){
+			switch(messageComponent[0]) {
 
-			case "|00":		// Broadcast global message
-				broadcast(message.substring(1));
+			case "00":		// Broadcast global message
+				broadcast(messageComponent[1], address, port);
 				break;
 				
-			case "|01":		// Handshake
+			case "01":		// Handshake
 				System.out.println("message component[0]: " + messageComponent[0] + "message component[1]: " + messageComponent[1]);
 
 				if (addClient(messageComponent[1], address, port))
@@ -104,20 +104,20 @@ public class Server {
 					
 				break;
 				
-			case "|02":		// Private message
-				// sendPrivateMessage()
+			case "02":		// Private message
+				sendPrivateMessage(messageComponent[3], messageComponent[2], address, port);
 				break;
 				
-			case "|03":		// List request
+			case "03":		// List request
 				// return list
 				break;
 				
-			case "|04":		// Leave request
+			case "04":		// Leave request
 				// disconnect user
 				break;
 				
 			default:
-				System.err.println("Error: unknown message type");
+				System.err.println("Error: unknown message type: " + messageComponent[0]);
 			}
 			
 			
@@ -150,25 +150,33 @@ public class Server {
 		return true;
 	}
 
-	public void sendPrivateMessage(String message, String name) {
+	public void sendPrivateMessage(String msg, String name, InetAddress address, int port) {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
+				
+				String whisper = new String(name + " whispers: " + msg);
+				DatagramPacket message = pack(whisper, address, port);
+				
 				c.sendMessage(message, m_socket);
 			}
 		}
 	}
 
-	public void broadcast(String message) {
+	public void broadcast(String msg, InetAddress address, int port) {
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			
+			DatagramPacket message = pack(msg, address, port);
+			
 			itr.next().sendMessage(message, m_socket);
+			System.out.println("Broadcasting message: " + message);
 		}
 	}
 
-	public DatagramPacket pack(String name, String msg, InetAddress iadd, int port){
+	public DatagramPacket pack(String msg, InetAddress iadd, int port){
 		// Append message code and name to message, marshal packet and send it to assigned address and port
-		String message = name + msg;
+		String message = msg;
 		byte[] data = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
 		

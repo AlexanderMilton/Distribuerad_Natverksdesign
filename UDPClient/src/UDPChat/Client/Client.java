@@ -65,13 +65,14 @@ public class Client implements ActionListener {
 		if (c == '/')
 		{
 			String[] stringArray = input.split(" ", 2);
+			System.out.println("Input is command: " + stringArray[0] + " " + stringArray[1] + " " + stringArray[2]);
 			m_connection.sendChatMessage(m_name, stringArray[0], stringArray[1], stringArray[2]);
 		}
 		
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-		
+			System.out.println("Input is global message: " + input);
 			m_connection.sendChatMessage(m_name, input);
 		}
 		
