@@ -37,15 +37,15 @@
 	</section>
 	<section name="FatJarPackageWizard">
 		<item value="\\hsnas3\studenthome\2013\b13alemi\Documents\Distribuerad_Nätverksdesign.xml" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
-		<item value="UDPClient\Client.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
-		<item value="Client - UDPClient" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="UDPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="Server - UDPServer" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
-			<item value="UDPClient\Client.jar"/>
-			<item value="UDPServer/Server.jar"/>
-			<item value="UDPClient/Client.jar"/>
 			<item value="UDPServer\Server.jar"/>
+			<item value="UDPClient\Client.jar"/>
+			<item value="UDPClient/Client.jar"/>
+			<item value="UDPServer/Server.jar"/>
 			<item value="P:\GitHub\Distribuerad_Natverksdesign\UDPServer\Server.jar"/>
 		</list>
 		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
@@ -76,6 +76,8 @@
 		</section>
 	</section>
 	<section name="completion_proposal_size">
+		<item value="252" key="size.y"/>
+		<item value="385" key="size.x"/>
 	</section>
 	<section name="JarPackageWizard">
 		<item value="false" key="JarPackageWizardPage.INCLUDE_DIRECTORY_ENTRIES"/>

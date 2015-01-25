@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="UDPChat.Client.Client"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="localhost 25020 alex"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="localhost 25020 Alex"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="UDPClient"/>
 </launchConfiguration>

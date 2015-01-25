@@ -23,7 +23,7 @@ public class ServerConnection {
 
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
-	private DatagramSocket m_socket = null;
+	private DatagramSocket m_clientSocket = null;
 	private DatagramSocket m_serverSocket = null;
 	
 
@@ -41,20 +41,20 @@ public class ServerConnection {
 		
 		// Create socket
 		try {
-			m_socket = new DatagramSocket();
-			m_serverSocket = new DatagramSocket(m_serverPort);
+			m_clientSocket = new DatagramSocket();
+			//m_serverSocket = new DatagramSocket(m_serverPort);
 		} catch (SocketException e) {
 			e.printStackTrace();
 			System.err.println("Error: invalid port.");
 		}
 
-		System.out.println("Local socket port: " + m_socket.getLocalPort());
-		System.out.println("Local socket at address: " + m_serverAddress);
-		System.out.println("Bound server socket port: " + m_serverPort);
+		System.out.println("Local port: " + m_clientSocket.getLocalPort());
+		System.out.println("Server address: " + m_serverAddress);
+		System.out.println("Server port: " + m_serverPort);
 		
 		// TODO:
 		// - get address of host based on parameters and assign it to m_serverAddress
-		// - set up socket and assign it to m_socket
+		// - set up socket and assign it to m_clientSocket
 
 	}
 
@@ -66,9 +66,9 @@ public class ServerConnection {
 			System.err.println("Error: username can be at most 20 characters.");
 			return false;
 		}
-		else if (name.length() < 1)
+		else if (name.length() < 3)
 		{
-			System.err.println("Error: username must be at least one character.");
+			System.err.println("Error: username must be at least 3 characters.");
 			return false;
 		}
 
@@ -79,7 +79,7 @@ public class ServerConnection {
 		
 		// Attempt to send and receive handshake		
 		try {
-			m_socket.send(handshake);
+			m_clientSocket.send(handshake);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Error: failed to establish connection.");
@@ -92,7 +92,7 @@ public class ServerConnection {
 		
 		// Receive handshake
 		try {
-			m_socket.receive(handshakeResponse);
+			m_clientSocket.receive(handshakeResponse);
 		} catch (IOException e) {
 			System.err.println("Failed to receive packet");
 			e.printStackTrace();
@@ -130,7 +130,7 @@ public class ServerConnection {
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		
 		try {
-			m_socket.receive(packet);
+			m_clientSocket.receive(packet);
 		} catch (IOException e) {
 			System.err.println("Error: client failed to receive packet.");
 			e.printStackTrace();
@@ -149,54 +149,14 @@ public class ServerConnection {
 
 	}
 	
-	public void sendChatMessage(String name, String comm, String arg, String msg) {
-		// if an argument is included, append and forward it
 
-		String type = null;
-		String message = comm + "|" + arg + "|" + msg + "|" + name;
-		
-		switch(comm){
-		
-		// Connect to server - OBSOLETE
-		case "/connect":	case "/Connect":	case "/CONNECT":
-			type = "01";
-			break;
 
-		// Send private message
-		case "/whisper":	case "/Whisper":	case "/WHISPER":
-			type = "02";
-			break;
-
-		// Request user list
-		case "/list":	case "/List":	case "/LIST":
-			type = "03";
-			break;
-
-		// Request disconnect
-		case "/leave":	case "/Leave":	case "/LEAVE":
-		case "/quit":	case "/Quit":	case "/QUIT":
-		case "/exit":	case "/Exit": 	case "/EXIT":
-		case "/dc":		case "/DC":
-			type = "04";
-			break;
-		
-		default:
-			System.err.println("Error: invalid command");
-			return;
-		}
-		
-		message = type + "|" + arg + "|" + msg;
-		
-		sendChatMessage(name, message);
-	}
-
-	public void sendChatMessage(String name, String msg) {
+	public void sendChatMessage(String msg) {
 		// Randomize a failure variable
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		
-		// Copy the user's message, trim it and split it at each separator
-		String message = "00" + "|" + msg + "|" + name;	// Broadcast code "00"
+		String message = msg;
 		message.trim();
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
@@ -206,15 +166,12 @@ public class ServerConnection {
 			
 			// Send message
 			try {
-				m_socket.send(packet);
+				m_clientSocket.send(packet);
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.err.println("Error: failed to send message");
 			}
 			
-			// TODO:
-			// - marshal message if necessary
-			// - send a chat message to the server
 		} else {
 			// Message got lost
 			System.err.println("Message lost on client side");

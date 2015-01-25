@@ -54,5 +54,17 @@ public class ClientConnection {
 	public boolean hasName(String testName) {
 		return testName.equals(m_name);
 	}
+	
+	public InetAddress getAddress() {
+		return m_address;
+	}
+	
+	public String getName() {
+		return m_name;
+	}
+	
+	public int getPort() {
+		return m_port;
+	}
 
 }

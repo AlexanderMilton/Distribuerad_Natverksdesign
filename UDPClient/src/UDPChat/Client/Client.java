@@ -51,29 +51,60 @@ public class Client implements ActionListener {
 		} while(true);
 	}
 
-	// Sole ActionListener method; acts as a callback from GUI when user hits
-	// enter in input field
+	// Sole ActionListener method; acts as a callback from GUI when user hits enter in input field
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// Since the only possible event is a carriage return in the text input field,
-		// the text in the chat input field can now be sent to the server.
+		// Get input from GUI window
 		String input = m_GUI.getInput();
 		
-		char c = input.charAt(0);
-		
 		// Forward slash expects a command with our without argument and message
-		if (c == '/')
+		if (input.startsWith("/"))
 		{
 			String[] stringArray = input.split(" ", 2);
-			System.out.println("Input is command: " + stringArray[0] + " " + stringArray[1] + " " + stringArray[2]);
-			m_connection.sendChatMessage(m_name, stringArray[0], stringArray[1], stringArray[2]);
+			String message = null;
+			
+			switch(stringArray[0]){
+			
+			// Connect to server - OBSOLETE
+			case "/connect":	case "/Connect":	case "/CONNECT":	case "/c":
+				message = "01";
+				break;
+
+			// Send private message
+			case "/whisper":	case "/Whisper":	case "/WHISPER":	case "/w":
+				message = "02" + "|" + stringArray[1] + "|" + stringArray[2] + "|" + m_name;
+				break;
+
+			// Request user list
+			case "/list":		case "/List":		case "/LIST":		case "/l":
+				message = "03" + "|" + m_name;
+				break;
+
+			// Request disconnect
+			case "/leave":		case "/Leave":		case "/LEAVE":
+			case "/quit":		case "/Quit":		case "/QUIT":
+			case "/exit":		case "/Exit": 		case "/EXIT":
+			case "/dc":			case "/DC":			case "/q":
+				
+				message = "04" + "|" + stringArray[1] + "|" + stringArray[2] + "|" + m_name;
+				break;
+			
+			default:
+				System.err.println("Error: invalid command");
+				m_GUI.clearInput();
+				return;
+			}
+			
+			m_connection.sendChatMessage(message);
+			
 		}
 		
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-			System.out.println("Input is global message: " + input);
-			m_connection.sendChatMessage(m_name, input);
+			String message = "00" + "|" + input + "|" + m_name;
+			m_connection.sendChatMessage(message);
 		}
 		
 		m_GUI.clearInput();

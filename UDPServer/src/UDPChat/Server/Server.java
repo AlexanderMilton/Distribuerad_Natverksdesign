@@ -9,8 +9,8 @@ package UDPChat.Server;
 
 import java.io.IOException;
 import java.net.*;
-//import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 public class Server {
@@ -48,13 +48,14 @@ public class Server {
 
 	private void listenForClientMessages() {
 		System.out.println("Waiting for client messages... ");
-
+		
+		// Check if all clients are still connected
+		pollClientConnectionStatus();
+		
 		do {
 
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
-			
-			System.out.println("Attempting to receive packet... ");
 			
 			try {
 				m_socket.receive(packet);
@@ -63,34 +64,30 @@ public class Server {
 				e1.printStackTrace();
 			}
 			
-			System.out.println("Received client packet");
-			
 			// Unpack message
 			String message = unpack(packet);
 			
+			// Split message into segments containing type, message and/or arguments
+			String[] messageComponent = message.split("\\|");
+
 			// Read packet sender address and port
 			InetAddress address = packet.getAddress();
 			int port = packet.getPort();
 			
-			// Split message into segments containing type, message and/or arguments
-			String[] messageComponent = message.split("\\|");
-			
 			switch(messageComponent[0]) {
 
 			case "00":		// Broadcast global message
-				broadcast(messageComponent[1], address, port);
+				broadcast(messageComponent[2] + ": " + messageComponent[1]);
 				break;
 				
 			case "01":		// Handshake
-				System.out.println("message component[0]: " + messageComponent[0] + "message component[1]: " + messageComponent[1]);
-
+				
 				if (addClient(messageComponent[1], address, port))
 				{
 					String response = "OK";
 					buf = response.getBytes();
 					packet = new DatagramPacket(buf, buf.length, address, port);
 					try {
-						System.out.println("Attempting to send packet containing: " + response);
 						m_socket.send(packet);
 					} catch (IOException e) {
 						System.err.println("Error: failed to send handshake response");
@@ -105,15 +102,18 @@ public class Server {
 				break;
 				
 			case "02":		// Private message
+				System.out.println("Sending private message: " + messageComponent[3] + " to client " + messageComponent[2]);
 				sendPrivateMessage(messageComponent[3], messageComponent[2], address, port);
 				break;
 				
 			case "03":		// List request
-				// return list
+				// Send a list of all clients
+				printClientList(messageComponent[1], address, port);
 				break;
 				
 			case "04":		// Leave request
-				// disconnect user
+				// Disconnect user
+				disconnectClient(messageComponent[2]);
 				break;
 				
 			default:
@@ -136,13 +136,21 @@ public class Server {
 		} while (true);
 	}
 
+	public void broadcast(String msg) {
+		ClientConnection c;
+		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			DatagramPacket message = pack(msg, c.getAddress(), c.getPort());
+			c.sendMessage(message, m_socket);
+		}
+	}
+
 	public boolean addClient(String name, InetAddress address, int port) {
 		ClientConnection c;
-		System.out.println("Attempting to add client...");
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
-				return false; // Already exists a client with this name
+				return false;	// Already exists a client with this name
 			}
 		}
 		m_connectedClients.add(new ClientConnection(name, address, port));
@@ -150,7 +158,7 @@ public class Server {
 		return true;
 	}
 
-	public void sendPrivateMessage(String msg, String name, InetAddress address, int port) {
+	public void sendPrivateMessage(String name, String msg, InetAddress address, int port) {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
@@ -163,17 +171,42 @@ public class Server {
 			}
 		}
 	}
-
-	public void broadcast(String msg, InetAddress address, int port) {
+	
+	public void printClientList(String name, InetAddress address, int port) {
+		String clientList = new String();
+		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
-			
-			DatagramPacket message = pack(msg, address, port);
-			
-			itr.next().sendMessage(message, m_socket);
-			System.out.println("Broadcasting message: " + message);
+			c = itr.next();
+			clientList += (c.getName() + System.getProperty("line.separator"));
+		}
+		sendPrivateMessage(clientList.toString(), name, address, port);
+	}
+	
+	public void disconnectClient(String name) {
+		ClientConnection c;
+		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			if(c.hasName(name)) {
+				c = null;
+				broadcast(c.getName() + " left the chat");
+				return;
+			}
 		}
 	}
-
+	
+	public void pollClientConnectionStatus() {
+		ClientConnection c;
+		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			try {
+				c.getAddress().isReachable(10);
+			} catch (IOException e) {
+				broadcast(c.getName() + " timed out");
+				c = null;
+			}
+		}
+	}
+	
 	public DatagramPacket pack(String msg, InetAddress iadd, int port){
 		// Append message code and name to message, marshal packet and send it to assigned address and port
 		String message = msg;
