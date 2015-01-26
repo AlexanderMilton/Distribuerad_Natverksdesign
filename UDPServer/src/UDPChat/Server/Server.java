@@ -49,11 +49,12 @@ public class Server {
 	private void listenForClientMessages() {
 		System.out.println("Waiting for client messages... ");
 		
-		// Check if all clients are still connected
-		pollClientConnectionStatus();
 		
 		do {
 
+			// Check if all clients are still connected
+			pollClientConnectionStatus();
+			
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			
@@ -100,7 +101,6 @@ public class Server {
 				{
 					System.err.println("Error: failed to add client");
 				}
-					
 				break;
 				
 			case "02":		// Private message
@@ -168,6 +168,19 @@ public class Server {
 			if(c.hasName(name)) {
 				
 				DatagramPacket message = pack(msg, address, port);
+				
+				c.sendMessage(message, m_socket);
+			}
+		}
+	}
+
+	public void acknowledgeMessage(String name, InetAddress address, int port) {
+		ClientConnection c;
+		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			if(c.hasName(name)) {
+				
+				DatagramPacket message = pack("ack", address, port);
 				
 				c.sendMessage(message, m_socket);
 			}

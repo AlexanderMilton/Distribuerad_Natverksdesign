@@ -25,13 +25,13 @@ public class ServerConnection {
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
 	private DatagramSocket m_clientSocket = null;
-	private DatagramSocket m_serverSocket = null;
+	private int id;
+	private int sendCounter = 0;
+	private int ackCounter = 0;
 	
 
-	public ServerConnection(String hostName, int port) {
-		// Assign port
-		m_serverPort = port;
-		
+	public ServerConnection(String hostName, int port, String name) {
+				
 		// Get host address by name
 		try {
 			m_serverAddress = InetAddress.getByName(hostName);
@@ -39,6 +39,12 @@ public class ServerConnection {
 			e.printStackTrace();
 			System.err.println("Error: unknown host.");
 		}
+		
+		// Assign port
+		m_serverPort = port;
+		
+		// Create ID from username
+		id = Integer.parseInt(name);
 		
 		// Create socket
 		try {
@@ -81,6 +87,7 @@ public class ServerConnection {
 		// Attempt to send and receive handshake		
 		try {
 			m_clientSocket.send(handshake);
+			m_clientSocket.setSoTimeout(250);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Error: failed to establish connection.");
@@ -150,7 +157,37 @@ public class ServerConnection {
 
 	}
 	
-
+	/* discarded ack concept
+	  for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
+				
+				if (failure > TRANSMISSION_FAILURE_RATE) {
+					
+					// Pack message with the given type
+					DatagramPacket packet = pack(message);
+					
+					// Send message
+					try {
+						m_clientSocket.send(packet);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.err.println("Error: failed to send message");
+					}
+					
+					// Receive acknowledgement
+					try {
+						m_clientSocket.receive(packet);
+						return;
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.err.println("Error: failed to receive acknowledgement");
+					}
+					
+				} else {
+					// Message got lost
+					System.err.println("Message lost on client side");
+				}
+			}
+	*/
 
 	public void sendChatMessage(String msg) {
 		// Randomize a failure variable
@@ -159,23 +196,40 @@ public class ServerConnection {
 		
 		String message = msg;
 		message.trim();
-
+		
+		
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			
 			// Pack message with the given type
 			DatagramPacket packet = pack(message);
 			
-			// Send message
-			try {
-				m_clientSocket.send(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.err.println("Error: failed to send message");
+			for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
+				
+				if (failure > TRANSMISSION_FAILURE_RATE) {
+					
+					// Send message
+					try {
+						m_clientSocket.send(packet);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.err.println("Error: failed to send message");
+					}
+					
+					// Receive acknowledgment
+					try {
+						m_clientSocket.RESET TIMER
+						m_clientSocket.receive(packet);
+						return;
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.err.println("Error: failed to receive acknowledgement");
+					}
+					
+				} else {
+					// Message got lost
+					System.err.println("Message lost on client side");
+				}
 			}
-			
-		} else {
-			// Message got lost
-			System.err.println("Message lost on client side");
 		}
 		
 	}
@@ -205,36 +259,3 @@ public class ServerConnection {
 // packet contains either:		UPDATED: NO!
 //	type 	sender_name 	message 	address 		port
 //	type 	argument 		message 	sender_name 	address 	port
-
-
-/* discarded ack concept
-  for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
-			
-			if (failure > TRANSMISSION_FAILURE_RATE) {
-				
-				// Pack message with the given type
-				DatagramPacket packet = pack(message);
-				
-				// Send message
-				try {
-					m_clientSocket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to send message");
-				}
-				
-				// Receive acknowledgement
-				try {
-					m_clientSocket.receive(packet);
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to receive acknowledgement");
-				}
-				
-			} else {
-				// Message got lost
-				System.err.println("Message lost on client side");
-			}
-		}
-*/

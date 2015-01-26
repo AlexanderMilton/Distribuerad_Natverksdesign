@@ -1,0 +1,62 @@
+
+Variabler:
+		
+	ServerConnection:
+		int MESSAGE_COUNTER
+		int ACK_COUNTER
+		
+	ClientConnection:		
+		// int/string ID (lets not, såvide vi inte behöver?)
+		int MESSAGE_COUNTER
+		int ACK_COUNTER
+
+// Clienten skapas med tomt [ID] 
+Clienten skapas med nollställd [MESSAGE_COUNTER] 
+Clienten skapas med nollställd [ACK_COUNTER]
+
+ServerConenction skickar en handshake med [NAME] till servern
+Servern kontrollerar att namnet inte redan existerar i Client-listan
+Servern returnerar [OK] om namnet är ledigt, läggs till i Client-listan
+
+Clienten inkrementerar [MESSAGE_COUNTER]
+	for (10 försök)
+		Clienten skickar en broadcast [hello world], [ID] och [MESSAGE_COUNTER] till Server -->
+		Clientens socket TIMEOUT nollställs
+		Clienten kör receive med en socket TIMEOUT
+			om (timeout)
+				itererar for
+			om (ACK)
+				returnera TRUE
+				inkrementera ACK
+				
+		-->	Servern tar emot broadcasten
+			Servern jämför [MC] med motsvarande ClientConnection's [_MC]
+				om [MC] > [_MC] (eller [MC] == [_MC]+1 ?) 
+					inkrementera ClientConnection's [_MC]
+					broadcasta meddelandet --->
+					returnera ACK (utan fault tolerance, låt Client ansvara för detta)
+				annars
+					returnera ACK
+					
+			--->	Servern broadcastar meddelande till alla ClientConnections
+					for (10 försök)
+						(varje enskild) ClientConnection skickar ACK med sin [ACK_COUNTER] till Client ---->
+						ClientConenction's socket TIMEOUT nollställs
+						ClientConnection kör receive med en socket TIMEOUT
+							om (timeout)
+								itererar for
+							om (ACK)
+								ServerClient inkrementerar [ACK_COUNTER]
+								returnera TRUE
+								
+					----> 	Client tar emot ACK request
+							Client jämför [_ACK] med ClientConnection's [ACK]
+								om [_ACK] == [ACK]
+									inkrementera [_ACK]
+									returnera ACK (utan fault tolerance, låt ClientConnection ansvara för detta)
+								annars
+									ERROR?
+								
+					returnera FALSE
+				
+	returnera FALSE

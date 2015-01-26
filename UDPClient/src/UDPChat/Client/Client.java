@@ -35,7 +35,7 @@ public class Client implements ActionListener {
 
 	private void connectToServer(String hostName, int port) {
 		// Create a new server connection
-		m_connection = new ServerConnection(hostName, port);
+		m_connection = new ServerConnection(hostName, port, m_name);
 		if (m_connection.handshake(m_name)) {
 			listenForServerMessages();
 		} else {

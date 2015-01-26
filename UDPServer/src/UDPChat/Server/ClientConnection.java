@@ -22,12 +22,13 @@ public class ClientConnection {
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port;
+	private int m_counter;
 	
 	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
-		
+		m_counter = 0;
 	}
 
 	public void sendMessage(DatagramPacket message, DatagramSocket socket) {
@@ -65,6 +66,10 @@ public class ClientConnection {
 	
 	public int getPort() {
 		return m_port;
+	}
+	
+	public int getCounter() {
+		return m_counter;
 	}
 
 }
