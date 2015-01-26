@@ -63,33 +63,31 @@ public class Client implements ActionListener {
 		{
 			String[] stringArray = input.split(" ", 2);
 			String message = null;
-			stringArray[0].toLowerCase();
 			
-			switch(stringArray[0]) {
+			switch(stringArray[0]){
 			
 			// Connect to server - OBSOLETE
-			/*
-			case "/connect":	case "/c":
-				message = "01" + "|" + m_name;
+			case "/connect":	case "/Connect":	case "/CONNECT":	case "/c":
+				message = "01";
 				break;
-			*/
 
 			// Send private message
-			case "/whisper":	case "/w":
+			case "/whisper":	case "/Whisper":	case "/WHISPER":	case "/w":
 				message = "02" + "|" + stringArray[1] + "|" + stringArray[2] + "|" + m_name;
 				break;
 
 			// Request user list
-			case "/list":		case "/l":
+			case "/list":		case "/List":		case "/LIST":		case "/l":
 				message = "03" + "|" + m_name;
 				break;
 
 			// Request disconnect
-			case "/leave":		case "/quit":
-			case "/exit":		case "/dc":
+			case "/leave":		case "/Leave":		case "/LEAVE":
+			case "/quit":		case "/Quit":		case "/QUIT":
+			case "/exit":		case "/Exit": 		case "/EXIT":
+			case "/dc":			case "/DC":			case "/q":
 				
-				message = "04" + "|" + m_name;
-
+				message = "04" + "|" + stringArray[1] + "|" + stringArray[2] + "|" + m_name;
 				break;
 			
 			default:

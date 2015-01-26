@@ -160,6 +160,7 @@ public class ServerConnection {
 		String message = msg;
 		message.trim();
 
+		for (int i = 0; i <= MAX_SEND_ATTEMPTS; i++)
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			
 			// Pack message with the given type

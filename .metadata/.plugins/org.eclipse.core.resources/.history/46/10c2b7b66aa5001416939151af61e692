@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Random;
 
@@ -160,22 +161,39 @@ public class ServerConnection {
 		String message = msg;
 		message.trim();
 
-		if (failure > TRANSMISSION_FAILURE_RATE) {
+		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
 			
-			// Pack message with the given type
-			DatagramPacket packet = pack(message);
-			
-			// Send message
-			try {
-				m_clientSocket.send(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.err.println("Error: failed to send message");
+			if (failure > TRANSMISSION_FAILURE_RATE) {
+				
+				// Pack message with the given type
+				DatagramPacket packet = pack(message);
+				
+				// Send message
+				try {
+					m_clientSocket.send(packet);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.err.println("Error: failed to send message");
+				} 
+				
+				packet.setSoTimeout(1000);
+				
+				// Receive acknowledgement
+				try {
+					m_clientSocket.receive(packet);
+				} catch (IOException e) {
+					System.err.println("Failed to receive packet");
+					e.printStackTrace();
+				} catch (SocketTimeoutException e) {
+	                // timeout exception.
+	                System.out.println("Message timed out. Attempts left: " + (10 - i));
+	            }
+				
+				
+			} else {
+				// Message got lost
+				System.err.println("Message lost on client side");
 			}
-			
-		} else {
-			// Message got lost
-			System.err.println("Message lost on client side");
 		}
 		
 	}
@@ -205,36 +223,3 @@ public class ServerConnection {
 // packet contains either:		UPDATED: NO!
 //	type 	sender_name 	message 	address 		port
 //	type 	argument 		message 	sender_name 	address 	port
-
-
-/* discarded ack concept
-  for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
-			
-			if (failure > TRANSMISSION_FAILURE_RATE) {
-				
-				// Pack message with the given type
-				DatagramPacket packet = pack(message);
-				
-				// Send message
-				try {
-					m_clientSocket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to send message");
-				}
-				
-				// Receive acknowledgement
-				try {
-					m_clientSocket.receive(packet);
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to receive acknowledgement");
-				}
-				
-			} else {
-				// Message got lost
-				System.err.println("Message lost on client side");
-			}
-		}
-*/

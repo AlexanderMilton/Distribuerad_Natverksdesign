@@ -20,7 +20,6 @@ public class ServerConnection {
 
 	// Artificial failure rate of 30% packet loss
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
-	static int MAX_SEND_ATTEMPTS = 10;
 
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
@@ -177,7 +176,6 @@ public class ServerConnection {
 			// Message got lost
 			System.err.println("Message lost on client side");
 		}
-		
 	}
 	
 	public DatagramPacket pack(String msg){
@@ -205,36 +203,3 @@ public class ServerConnection {
 // packet contains either:		UPDATED: NO!
 //	type 	sender_name 	message 	address 		port
 //	type 	argument 		message 	sender_name 	address 	port
-
-
-/* discarded ack concept
-  for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
-			
-			if (failure > TRANSMISSION_FAILURE_RATE) {
-				
-				// Pack message with the given type
-				DatagramPacket packet = pack(message);
-				
-				// Send message
-				try {
-					m_clientSocket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to send message");
-				}
-				
-				// Receive acknowledgement
-				try {
-					m_clientSocket.receive(packet);
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.err.println("Error: failed to receive acknowledgement");
-				}
-				
-			} else {
-				// Message got lost
-				System.err.println("Message lost on client side");
-			}
-		}
-*/

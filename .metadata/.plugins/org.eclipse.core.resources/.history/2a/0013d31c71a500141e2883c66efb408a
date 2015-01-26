@@ -179,7 +179,7 @@ public class Server {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
-			clientList += ("> " + c.getName() + System.getProperty("line.separator"));
+			clientList += (c.getName() + System.getProperty("line.separator"));
 		}
 		sendPrivateMessage(name, clientList.toString(), address, port);
 	}

@@ -104,9 +104,8 @@ public class Server {
 				break;
 				
 			case "02":		// Private message
-				String whisperer = messageComponent[2];
-				System.out.println("Sending private message: " + messageComponent[2] + " to client " + whisperer);
-				sendPrivateMessage(messageComponent[2], whisperer, address, port);
+				System.out.println("Sending private message: " + messageComponent[3] + " to client " + messageComponent[2]);
+				sendPrivateMessage(messageComponent[3], messageComponent[2], address, port);
 				break;
 				
 			case "03":		// List request
@@ -167,7 +166,8 @@ public class Server {
 			c = itr.next();
 			if(c.hasName(name)) {
 				
-				DatagramPacket message = pack(msg, address, port);
+				String whisper = new String(name + " whispers: " + msg);
+				DatagramPacket message = pack(whisper, address, port);
 				
 				c.sendMessage(message, m_socket);
 			}
@@ -175,11 +175,11 @@ public class Server {
 	}
 	
 	public void printClientList(String name, InetAddress address, int port) {
-		String clientList = new String("[List of all active clients]\n");
+		String clientList = new String();
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
-			clientList += ("> " + c.getName() + System.getProperty("line.separator"));
+			clientList += (c.getName() + System.getProperty("line.separator"));
 		}
 		sendPrivateMessage(name, clientList.toString(), address, port);
 	}
@@ -189,8 +189,8 @@ public class Server {
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
-				broadcast(name + " left the chat");
 				c = null;
+				broadcast(c.getName() + " left the chat");
 				return;
 			}
 		}
