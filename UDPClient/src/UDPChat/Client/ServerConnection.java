@@ -22,6 +22,7 @@ public class ServerConnection {
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
 	static int MAX_SEND_ATTEMPTS = 10;
 
+	private String m_name;
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
 	private DatagramSocket m_clientSocket = null;
@@ -32,7 +33,10 @@ public class ServerConnection {
 	
 
 	public ServerConnection(String hostName, int port, String name) {
-				
+		
+		// Copy name of client to connection
+		m_name = name;
+		
 		// Get host address by name
 		try {
 			m_serverAddress = InetAddress.getByName(hostName);
@@ -56,11 +60,6 @@ public class ServerConnection {
 		System.out.println("Local port: " + m_clientSocket.getLocalPort());
 		System.out.println("Server address: " + m_serverAddress);
 		System.out.println("Server port: " + m_serverPort);
-		
-		// TODO:
-		// - get address of host based on parameters and assign it to m_serverAddress
-		// - set up socket and assign it to m_clientSocket
-
 	}
 
 	public boolean handshake(String name) {
@@ -80,12 +79,12 @@ public class ServerConnection {
 		// Pack a message with code 01 (handshake) and separator |
 		byte[] buf = new byte[256];
 		DatagramPacket handshake = new DatagramPacket(buf, buf.length);
-		handshake = pack("01" + "|" + name);
+		handshake = pack("01" + "|" + m_messageCounter + "|" + name);
 		
 		// Attempt to send and receive handshake		
 		try {
 			m_clientSocket.send(handshake);
-			m_clientSocket.setSoTimeout(250);
+			//m_clientSocket.setSoTimeout(250);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Error: failed to establish connection.");
@@ -119,7 +118,7 @@ public class ServerConnection {
 			return false;
 		}
 		
-		System.err.println("Error: unknown handshake return");
+		System.err.println("Error: unknown handshake return: " + message);
 		return false;
 	}
 
@@ -135,47 +134,36 @@ public class ServerConnection {
 			e.printStackTrace();
 		}
 		
-		String[] messageComponents = unpack(packet).split("|");
+		// Unpack and split message
+		String message = unpack(packet);
+		String[] messageComponents = message.split("|");
 		
-		if (messageComponents[0] > m_ackCounter) {
-			return message;
-		}
-		
-	}
-	
-	/* discarded ack concept
-	  for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
+		if (messageComponents[0].equals("ACK")) {
+			if (Integer.parseInt(messageComponents[0]) > m_ackCounter) {
 				
-				if (failure > TRANSMISSION_FAILURE_RATE) {
-					
-					// Pack message with the given type
-					DatagramPacket packet = pack(message);
-					
-					// Send message
-					try {
-						m_clientSocket.send(packet);
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.err.println("Error: failed to send message");
-					}
-					
-					// Receive acknowledgement
-					try {
-						m_clientSocket.receive(packet);
-						return;
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.err.println("Error: failed to receive acknowledgement");
-					}
-					
-				} else {
-					// Message got lost
-					System.err.println("Message lost on client side");
-				}
+				// Increment ack-counter
+				m_ackCounter++;		// = messageComponents[0];
+				
+				// Send ack
+				//sendChatMessage("05" + "|" + m_name); <-- if direct send fails
+				sendChatMessage("ACK" + "|" + m_messageCounter + "|" + m_name, false);
+				
+				// Ret
+				return messageComponents[1];
 			}
-	*/
+			else {
+				// Message already interpreted, send ack
+				//sendChatMessage("05" + "|" + m_name); <-- if direct send fails
+				sendChatMessage("ACK" + "|" + m_messageCounter + "|" + m_name, false);
+				return null;
+			}
+		}
+		else
+			return message;
+	}
 
-	public void sendChatMessage(String msg) {
+	public void sendChatMessage(String msg, boolean reqAck) {
+		
 		// Randomize a failure variable
 		Random generator = new Random();
 		double failure = generator.nextDouble();
@@ -183,48 +171,68 @@ public class ServerConnection {
 		String message = msg;
 		message.trim();
 		
-		// Increment message counter
-		m_messageCounter++;
-		
-		
 		// Pack message with the given type
 		DatagramPacket packet = pack(message);
 		
-		// Make a number of attempts to send the message
-		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
+		// Messages require acknowledgments
+		if (reqAck) {
 			
-			if (failure > TRANSMISSION_FAILURE_RATE) {
+			System.out.println("m_messageCounter: " + m_messageCounter);
+			
+			// Make a number of attempts to send the message
+			for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
 				
+				failure = generator.nextDouble();
+				
+				if (failure > TRANSMISSION_FAILURE_RATE) {
+					
+					// Send message
+					try {
+						m_clientSocket.send(packet);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.out.println("Failed to send, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+					}
+					
+					//m_clientSocket.RESET TIMER;
+					message = receiveChatMessage();
+					if (message.equals("ACK"))
+					{
+						// Message was successfully sent and acknowledged by server
+						System.err.println("Error: message transmission failure");
+						return;
+					}
+					else
+					{
+						// Non-ack message was received
+						continue;
+					}
+					
+				} else {
+					// Message got lost
+					System.err.println("Message lost on client side");
+				}
+			}
+			// Message failed to send, decrement message counter
+			m_messageCounter--;
+			System.err.println("Error: failed to send message");
+		}
+		
+		// Acknowledgments do not require their own acks
+		else {
+			if (failure > TRANSMISSION_FAILURE_RATE) {
 				// Send message
 				try {
 					m_clientSocket.send(packet);
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.out.println("Failed to send, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+					System.out.println("Failed to send ack");
 				}
-				
-				//m_clientSocket.RESET TIMER;
-				message = receiveChatMessage();
-				if (message.equals("ACK"))
-				{
-					// Message was successfully sent and acknowledged by server
-					System.err.println("Error: message transmission failure");
-					return;
-				}
-				else
-				{
-					// Non-ack message was received
-					continue;
-				}
-				
 			} else {
 				// Message got lost
 				System.err.println("Message lost on client side");
 			}
 		}
-		// Message failed to send, decrement message counter
-		m_messageCounter--;
-		System.err.println("Error: failed to send message");
 	}
 	
 	public DatagramPacket pack(String msg){

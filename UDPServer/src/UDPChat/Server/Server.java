@@ -10,7 +10,6 @@ package UDPChat.Server;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 
 public class Server {
@@ -88,13 +87,17 @@ public class Server {
 			String type = messageComponent[0];
 			int messageCounter = Integer.parseInt(messageComponent[1]);
 			String name = messageComponent[2];
+
+			System.out.println("type: " + type);
+			System.out.println("messageCounter: " + messageCounter);
+			System.out.println("name: " + name);
 			
 			// Check if message has already been interpreted
-			if (messageAlreadyInterpreted(name, messageCounter)) {				
+			if (!type.equals("01") && messageAlreadyInterpreted(name, messageCounter)) {	
+				System.out.println("Message already interpreted");
 				sendPrivateMessage(name, "ACK", address, port);
 				continue;
 			}
-
 			
 			switch(type) {
 
@@ -106,6 +109,7 @@ public class Server {
 				
 				if (addClient(name, address, port))
 				{
+					System.out.println("Adding client...");
 					String response = "OK";
 					buf = response.getBytes();
 					packet = new DatagramPacket(buf, buf.length, address, port);
@@ -146,10 +150,18 @@ public class Server {
 				disconnectClient(name);
 				break;
 				
+			case "05":		// Message delivery acknowledgement
+				// Ack message
+				//acknowledgeMessage(name);
+
+				System.out.println("MESSAGE RETURNED TO SERVER");
+				break;
+				
 			default:
 				System.err.println("Error: unknown message type: " + messageComponent[0]);
+				
 			}
-			
+			acknowledgeMessage(name, address, port);
 		} while (true);
 	}
 
@@ -194,9 +206,11 @@ public class Server {
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
+				System.out.println("clientConnection MC: " + c.getMessageCounter());
+				System.out.println("serverConnection MC: " + clientMessageCounter);
 				if (c.getMessageCounter() < clientMessageCounter) {
 					// Message has not been interpreted
-					c.m_messageCounter++;
+					c.m_messageCounter++;	// = clientMessageCounter;
 					return false;
 				}
 			}
@@ -205,18 +219,17 @@ public class Server {
 		return true;
 	}
 
-	/*public void acknowledgeMessage(String name, InetAddress address, int port) {
+	
+	public void acknowledgeMessage(String name, InetAddress address, int port) {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
-				
-				DatagramPacket message = pack("ACK", address, port);
-				
+				DatagramPacket message = pack(c.m_ackCounter, "ACK", address, port);
 				c.sendMessage(message, m_socket);
 			}
 		}
-	}*/
+	}
 	
 	public void printClientList(String name, InetAddress address, int port) {
 		String clientList = new String("[List of all active clients]\n");

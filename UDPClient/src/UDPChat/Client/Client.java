@@ -65,6 +65,9 @@ public class Client implements ActionListener {
 			String message = null;
 			stringArray[0].toLowerCase();
 			
+			// Increment message counter
+			m_connection.m_messageCounter++;
+			
 			switch(stringArray[0]) {
 			
 			// Connect to server - OBSOLETE
@@ -98,15 +101,15 @@ public class Client implements ActionListener {
 				return;
 			}
 			
-			m_connection.sendChatMessage(message);
+			m_connection.sendChatMessage(message, true);
 			
 		}
 		
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-			String message = "00" + m_connection.m_messageCounter + "|" + m_name + "|" + input;
-			m_connection.sendChatMessage(message);
+			String message = "00" + "|" + m_connection.m_messageCounter + "|" + m_name + "|" + input;
+			m_connection.sendChatMessage(message, true);
 		}
 		
 		m_GUI.clearInput();

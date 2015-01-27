@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.Random;
 
 /**
@@ -25,7 +24,7 @@ public class ClientConnection {
 	private final int m_port;
 	
 	public int m_messageCounter = 0;
-	private int m_ackCounter = 0;
+	public int m_ackCounter = 0;
 	
 	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
@@ -34,9 +33,9 @@ public class ClientConnection {
 	}
 
 	public void sendMessage(DatagramPacket message, DatagramSocket socket) {
-
+		
+		// Randomize a failure variable
 		Random generator = new Random();
-		double failure = generator.nextDouble();
 		
 		DatagramPacket packet = message;
 		
@@ -46,6 +45,8 @@ public class ClientConnection {
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
 
+			double failure = generator.nextDouble();
+			
 			if (failure > TRANSMISSION_FAILURE_RATE) {
 				
 				// Send message
@@ -62,13 +63,14 @@ public class ClientConnection {
 					socket.receive(packet);
 					if (packet.getData().equals("ACK"))
 					{
+						System.out.println("MESSAGE RETURNED TO CLIENT CONNECTION");
 						// Message was successfully sent and acknowledged by client
-						System.err.println("Error: message transmission failure");
 						return;
 					}
 					else
 					{
 						// Non-ack message was received
+						System.err.println("Error: message transmission failure");
 						continue;
 					}
 				} catch (IOException e) {
