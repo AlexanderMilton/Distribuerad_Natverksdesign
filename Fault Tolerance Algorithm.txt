@@ -14,7 +14,7 @@ Variabler:
 Clienten skapas med nollställd [MESSAGE_COUNTER] 
 Clienten skapas med nollställd [ACK_COUNTER]
 
-ServerConenction skickar en handshake med [NAME] till servern
+ServerConnection skickar en handshake med [NAME] till servern
 Servern kontrollerar att namnet inte redan existerar i Client-listan
 Servern returnerar [OK] om namnet är ledigt, läggs till i Client-listan
 
@@ -26,8 +26,10 @@ Clienten inkrementerar [MESSAGE_COUNTER]
 			om (timeout)
 				itererar for
 			om (ACK)
-				returnera TRUE
+				returnera 
 				inkrementera ACK
+			annars
+				dekrementera [MC]
 				
 		-->	Servern tar emot broadcasten
 			Servern jämför [MC] med motsvarande ClientConnection's [_MC]
@@ -39,6 +41,7 @@ Clienten inkrementerar [MESSAGE_COUNTER]
 					returnera ACK
 					
 			--->	Servern broadcastar meddelande till alla ClientConnections
+					ServerClient inkrementerar [ACK_COUNTER]
 					for (10 försök)
 						(varje enskild) ClientConnection skickar ACK med sin [ACK_COUNTER] till Client ---->
 						ClientConenction's socket TIMEOUT nollställs
@@ -46,8 +49,10 @@ Clienten inkrementerar [MESSAGE_COUNTER]
 							om (timeout)
 								itererar for
 							om (ACK)
-								ServerClient inkrementerar [ACK_COUNTER]
-								returnera TRUE
+								returnera 
+							annars
+								dekrementera [AC]
+							
 								
 					----> 	Client tar emot ACK request
 							Client jämför [_ACK] med ClientConnection's [ACK]

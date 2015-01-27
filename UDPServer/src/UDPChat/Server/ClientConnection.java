@@ -18,38 +18,72 @@ import java.util.Random;
 public class ClientConnection {
 
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
+	static int MAX_SEND_ATTEMPTS = 10;
 
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port;
-	private int m_counter;
+	
+	public int m_messageCounter = 0;
+	private int m_ackCounter = 0;
 	
 	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
-		m_counter = 0;
 	}
 
 	public void sendMessage(DatagramPacket message, DatagramSocket socket) {
 
 		Random generator = new Random();
 		double failure = generator.nextDouble();
+		
+		DatagramPacket packet = message;
+		
+		// Increment message counter
+		m_ackCounter++;
+		
+		// Make a number of attempts to send the message
+		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
 
-		if (failure > TRANSMISSION_FAILURE_RATE) {
-			// TODO: send a message to this client using socket.
-			try {
-				socket.send(message);
-			} catch (IOException e) {
-				System.err.println("Error: failed to send message to client!");
-				e.printStackTrace();
+			if (failure > TRANSMISSION_FAILURE_RATE) {
+				
+				// Send message
+				try {
+					socket.send(packet);
+				} catch (IOException e) {
+					System.err.println("Error: failed to send message to client");
+					e.printStackTrace();
+				}
+				
+				// Receive acknowledgment
+				try {
+					//socket.RESET TIMER
+					socket.receive(packet);
+					if (packet.getData().equals("ACK"))
+					{
+						// Message was successfully sent and acknowledged by client
+						System.err.println("Error: message transmission failure");
+						return;
+					}
+					else
+					{
+						// Non-ack message was received
+						continue;
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.err.println("Error: failed to receive acknowledgement");
+				}
+				
+			} else {
+				// Message got lost
+				System.out.println("Message lost on server side");
 			}
-			
-		} else {
-			// Message got lost
-			System.out.println("Message lost on server side");
 		}
-
+		// Message failed to send, decrement ack counter
+		m_ackCounter--;
+		System.err.println("Error: failed to send message");
 	}
 
 	public boolean hasName(String testName) {
@@ -68,8 +102,12 @@ public class ClientConnection {
 		return m_port;
 	}
 	
-	public int getCounter() {
-		return m_counter;
+	public int getMessageCounter() {
+		return m_messageCounter;
+	}
+	
+	public int getAckCounter() {
+		return m_ackCounter;
 	}
 
 }

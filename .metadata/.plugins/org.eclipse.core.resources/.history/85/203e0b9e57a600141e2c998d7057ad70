@@ -76,19 +76,19 @@ public class Client implements ActionListener {
 
 			// Send private message
 			case "/whisper":	case "/w":
-				message = "02" + m_connection.m_messageCounter + "|" + m_name + "|" + stringArray[1] + "|" + stringArray[2];
+				message = "02" + "|" + stringArray[1] + "|" + stringArray[2] + "|" + m_name;
 				break;
 
 			// Request user list
 			case "/list":		case "/l":
-				message = "03" + m_connection.m_messageCounter + "|" + m_name;
+				message = "03" + "|" + m_name;
 				break;
 
 			// Request disconnect
 			case "/leave":		case "/quit":
 			case "/exit":		case "/dc":
 				
-				message = "04" + m_connection.m_messageCounter + "|" + m_name;
+				message = "04" + "|" + m_name;
 
 				break;
 			
@@ -105,7 +105,7 @@ public class Client implements ActionListener {
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-			String message = "00" + m_connection.m_messageCounter + "|" + m_name + "|" + input;
+			String message = "00" + "|" + input + "|" + m_name;
 			m_connection.sendChatMessage(message);
 		}
 		

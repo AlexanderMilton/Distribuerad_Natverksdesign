@@ -71,40 +71,21 @@ public class Server {
 			System.out.println("Unpacked message: " + message);
 			
 			// Split message into segments containing type, message and/or arguments
-			/*
-			 * messageComponent[0] = type XX
-			 * messageComponent[1] = messageCounter
-			 * messageComponent[2] = name
-			 * messageComponent[3] = message/argument
-			 * messageComponent[4] = message (if argument present)
-			 */
 			String[] messageComponent = message.split("\\|");
 
 			// Read packet sender address and port
 			InetAddress address = packet.getAddress();
 			int port = packet.getPort();
 			
-			// Read message type, message count and sender name
-			String type = messageComponent[0];
-			int messageCounter = Integer.parseInt(messageComponent[1]);
-			String name = messageComponent[2];
-			
-			// Check if message has already been interpreted
-			if (messageAlreadyInterpreted(name, messageCounter)) {				
-				sendPrivateMessage(name, "ACK", address, port);
-				continue;
-			}
-
-			
-			switch(type) {
+			switch(messageComponent[0]) {
 
 			case "00":		// Broadcast global message
-				broadcast(name + ": " + messageComponent[3]);
+				broadcast(messageComponent[2] + ": " + messageComponent[1]);
 				break;
 				
 			case "01":		// Handshake
 				
-				if (addClient(name, address, port))
+				if (addClient(messageComponent[1], address, port))
 				{
 					String response = "OK";
 					buf = response.getBytes();
@@ -123,32 +104,37 @@ public class Server {
 				break;
 				
 			case "02":		// Private message
-				String recepient = messageComponent[3];
-				String whisper = messageComponent[4];
-				System.out.println("Sending private message: " + whisper + " to client " + recepient);
-				sendPrivateMessage(recepient, whisper, address, port);
+				String whisperer = messageComponent[2];
+				System.out.println("Sending private message: " + messageComponent[2] + " to client " + whisperer);
+				sendPrivateMessage(messageComponent[2], whisperer, address, port);
 				break;
-				
-				/* ^ old code, on ICE ^
-				String whisperer = messageComponent[3];
-				System.out.println("Sending private message: " + messageComponent[3] + " to client " + whisperer);
-				sendPrivateMessage(messageComponent[3], whisperer, address, port);
-				break;
-				*/
 				
 			case "03":		// List request
 				// Send a list of all clients
-				printClientList(name, address, port);
+				printClientList(messageComponent[1], address, port);
 				break;
 				
 			case "04":		// Leave request
 				// Disconnect user
-				disconnectClient(name);
+				disconnectClient(messageComponent[2]);
 				break;
 				
 			default:
 				System.err.println("Error: unknown message type: " + messageComponent[0]);
 			}
+			
+			
+			
+				
+			
+			// TODO: Listen for client messages.
+			// On reception of message, do the following:
+			// - Unmarshal message
+			// * Depending on message type, either
+			//    - Try to create a new ClientConnection using addClient(), send 
+			//      response message to client detailing whether it was successful
+			//    - Broadcast the message to all connected users using broadcast()
+			//    - Send a private message to a user using sendPrivateMessage()
 			
 		} while (true);
 	}
@@ -157,7 +143,7 @@ public class Server {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
-			DatagramPacket message = pack(c.getAckCounter(), msg, c.getAddress(), c.getPort());
+			DatagramPacket message = pack(msg, c.getAddress(), c.getPort());
 			c.sendMessage(message, m_socket);
 		}
 	}
@@ -181,42 +167,25 @@ public class Server {
 			c = itr.next();
 			if(c.hasName(name)) {
 				
-				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
+				DatagramPacket message = pack(msg, address, port);
 				
 				c.sendMessage(message, m_socket);
 			}
 		}
-	}
-	
-	public boolean messageAlreadyInterpreted(String name, int clientMessageCounter)
-	{
-		ClientConnection c;
-		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
-			c = itr.next();
-			if(c.hasName(name)) {
-				if (c.getMessageCounter() < clientMessageCounter) {
-					// Message has not been interpreted
-					c.m_messageCounter++;
-					return false;
-				}
-			}
-		}
-		// Message has already been interpreted
-		return true;
 	}
 
-	/*public void acknowledgeMessage(String name, InetAddress address, int port) {
+	public void acknowledgeMessage(String name, InetAddress address, int port) {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
 				
-				DatagramPacket message = pack("ACK", address, port);
+				DatagramPacket message = pack("ack", address, port);
 				
 				c.sendMessage(message, m_socket);
 			}
 		}
-	}*/
+	}
 	
 	public void printClientList(String name, InetAddress address, int port) {
 		String clientList = new String("[List of all active clients]\n");
@@ -253,9 +222,9 @@ public class Server {
 		}
 	}
 	
-	public DatagramPacket pack(int ackCounter, String msg, InetAddress iadd, int port){
+	public DatagramPacket pack(String msg, InetAddress iadd, int port){
 		// Append message code and name to message, marshal packet and send it to assigned address and port
-		String message = ackCounter + "|" + msg;
+		String message = msg;
 		byte[] data = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
 		

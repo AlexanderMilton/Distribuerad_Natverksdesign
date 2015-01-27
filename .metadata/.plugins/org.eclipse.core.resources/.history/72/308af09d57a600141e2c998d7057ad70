@@ -26,9 +26,8 @@ public class ServerConnection {
 	private InetAddress m_serverAddress = null;
 	private DatagramSocket m_clientSocket = null;
 	//private int id;
-	
-	public int m_messageCounter = 0;
-	private int m_ackCounter = 0;
+	private int messageCounter = 0;
+	private int ackCounter = 0;
 	
 
 	public ServerConnection(String hostName, int port, String name) {
@@ -135,12 +134,9 @@ public class ServerConnection {
 			e.printStackTrace();
 		}
 		
-		String[] messageComponents = unpack(packet).split("|");
+		String message = unpack(packet);
 		
-		if (messageComponents[0] > m_ackCounter) {
-			return message;
-		}
-		
+		return message;
 	}
 	
 	/* discarded ack concept
@@ -184,46 +180,56 @@ public class ServerConnection {
 		message.trim();
 		
 		// Increment message counter
-		m_messageCounter++;
+		messageCounter++;
 		
-		
-		// Pack message with the given type
-		DatagramPacket packet = pack(message);
-		
-		// Make a number of attempts to send the message
-		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
+		// Check for failure
+		if (failure > TRANSMISSION_FAILURE_RATE) {
 			
-			if (failure > TRANSMISSION_FAILURE_RATE) {
+			// Pack message with the given type
+			DatagramPacket packet = pack(message);
+			
+			// Make a number of attempts to send the message
+			for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
 				
-				// Send message
-				try {
-					m_clientSocket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.out.println("Failed to send, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+				if (failure > TRANSMISSION_FAILURE_RATE) {
+					
+					// Send message
+					try {
+						m_clientSocket.send(packet);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.out.println("Failed to send, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+					}
+					
+					// Receive acknowledgment
+					try {
+						//m_clientSocket.RESET TIMER
+						m_clientSocket.receive(packet);
+						message = unpack(packet);
+						if (message.equals("ACK"))
+						{
+							// Message was successfully sent and acknowledged by server
+							System.err.println("Error: message transmission failure");
+							return;
+						}
+						else
+						{
+							// Non-ack message was received
+							break;
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.err.println("Error: failed to receive acknowledgement");
+					}
+					
+				} else {
+					// Message got lost
+					System.err.println("Message lost on client side");
 				}
-				
-				//m_clientSocket.RESET TIMER;
-				message = receiveChatMessage();
-				if (message.equals("ACK"))
-				{
-					// Message was successfully sent and acknowledged by server
-					System.err.println("Error: message transmission failure");
-					return;
-				}
-				else
-				{
-					// Non-ack message was received
-					continue;
-				}
-				
-			} else {
-				// Message got lost
-				System.err.println("Message lost on client side");
 			}
 		}
 		// Message failed to send, decrement message counter
-		m_messageCounter--;
+		messageCounter--;
 		System.err.println("Error: failed to send message");
 	}
 	
