@@ -58,15 +58,15 @@ public class Client implements ActionListener {
 		// Get input from GUI window
 		String input = m_GUI.getInput();
 		
+		// Increment message counter
+		m_connection.m_messageCounter++;
+		
 		// Forward slash expects a command with our without argument and message
 		if (input.startsWith("/"))
 		{
 			String[] stringArray = input.split(" ", 2);
 			String message = null;
 			stringArray[0].toLowerCase();
-			
-			// Increment message counter
-			m_connection.m_messageCounter++;
 			
 			switch(stringArray[0]) {
 			
@@ -79,19 +79,19 @@ public class Client implements ActionListener {
 
 			// Send private message
 			case "/whisper":	case "/w":
-				message = "02" + m_connection.m_messageCounter + "|" + m_name + "|" + stringArray[1] + "|" + stringArray[2];
+				message = "02" + "|" + m_connection.m_messageCounter + "|" + m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;
 
 			// Request user list
 			case "/list":		case "/l":
-				message = "03" + m_connection.m_messageCounter + "|" + m_name;
+				message = "03" + "|" + m_connection.m_messageCounter + "|" + m_name;
 				break;
 
 			// Request disconnect
 			case "/leave":		case "/quit":
 			case "/exit":		case "/dc":
 				
-				message = "04" + m_connection.m_messageCounter + "|" + m_name;
+				message = "04" + "|" + m_connection.m_messageCounter + "|" + m_name;
 
 				break;
 			
@@ -110,6 +110,12 @@ public class Client implements ActionListener {
 		{
 			String message = "00" + "|" + m_connection.m_messageCounter + "|" + m_name + "|" + input;
 			m_connection.sendChatMessage(message, true);
+		}
+		
+		else
+		{
+			// Decrement message counter
+			m_connection.m_messageCounter--;
 		}
 		
 		m_GUI.clearInput();

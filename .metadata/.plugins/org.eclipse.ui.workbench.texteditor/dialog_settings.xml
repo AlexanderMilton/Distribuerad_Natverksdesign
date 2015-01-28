@@ -2,12 +2,13 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="ack" key="selection"/>
+		<item value="rece" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
+			<item value="rece"/>
 			<item value="ack"/>
 			<item value="++"/>
 			<item value="public void acknowledgeMessage(String name, InetAddress address, int port) {"/>
@@ -15,7 +16,6 @@
 			<item value="getName"/>
 			<item value="m_socket"/>
 			<item value="clientc"/>
-			<item value="send"/>
 		</list>
 		<list key="replacehistory">
 			<item value="getName"/>

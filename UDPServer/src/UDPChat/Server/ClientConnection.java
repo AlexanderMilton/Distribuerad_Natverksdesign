@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * 
@@ -22,14 +23,18 @@ public class ClientConnection {
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port;
-	
+	private final int m_ackPort;
+
+	public CountDownLatch acknowledgement;
 	public int m_messageCounter = 0;
 	public int m_ackCounter = 0;
 	
-	public ClientConnection(String name, InetAddress address, int port) {
+	public ClientConnection(String name, InetAddress address, int port, int ackPort) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
+		m_ackPort = ackPort;
+		acknowledgement = new CountDownLatch(1);
 	}
 
 	public void sendMessage(DatagramPacket message, DatagramSocket socket) {
@@ -39,8 +44,7 @@ public class ClientConnection {
 		
 		DatagramPacket packet = message;
 		
-		// Increment message counter
-		m_ackCounter++;
+		System.out.println("Sending on socket at port: " + socket.getLocalPort());
 		
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++) {
@@ -57,26 +61,36 @@ public class ClientConnection {
 					e.printStackTrace();
 				}
 				
-				// Receive acknowledgment
+				// Receive acknowledgment from Client via Server
 				try {
 					//socket.RESET TIMER
 					socket.receive(packet);
 					if (packet.getData().equals("ACK"))
 					{
-						System.out.println("MESSAGE RETURNED TO CLIENT CONNECTION");
+						System.out.println("Ack received by client connection");
 						// Message was successfully sent and acknowledged by client
 						return;
 					}
 					else
 					{
 						// Non-ack message was received
-						System.err.println("Error: message transmission failure");
+						System.err.println("Error: server-side message transmission failure");
 						continue;
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.err.println("Error: failed to receive acknowledgement");
 				}
+				
+				/*
+				// Receive acknowledgement from client via server
+				try {
+					acknowledgement.await();
+				} catch (InterruptedException e) {
+					System.err.println("Error: failed to receive acknowledgement");
+					e.printStackTrace();
+				}
+				*/
 				
 			} else {
 				// Message got lost
@@ -102,6 +116,10 @@ public class ClientConnection {
 	
 	public int getPort() {
 		return m_port;
+	}
+	
+	public int getAckPort() {
+		return m_ackPort;
 	}
 	
 	public int getMessageCounter() {

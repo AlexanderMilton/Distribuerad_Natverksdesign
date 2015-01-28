@@ -16,6 +16,7 @@ public class Server {
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private DatagramSocket m_socket;
+	private DatagramSocket m_ackSocket;
 
 	public static void main(String[] args) {
 		if(args.length < 1) {
@@ -36,12 +37,14 @@ public class Server {
 		// - create a socket, attach it to port based on portNumber, and assign it to m_socket
 		try {
 	        m_socket = new DatagramSocket(portNumber);
+	    	m_ackSocket = new DatagramSocket(portNumber + 1);
 		} catch (SocketException e) {
 			System.err.println("Error: failed to create socket.");
 			e.printStackTrace();
 		}
-		
-		System.out.println("Created socket at port " + portNumber);
+
+		System.out.println("Created socket at port " + m_socket.getLocalPort());
+		System.out.println("Created ack socket at port " + m_ackSocket.getLocalPort());
 
 	}
 
@@ -92,12 +95,6 @@ public class Server {
 			System.out.println("messageCounter: " + messageCounter);
 			System.out.println("name: " + name);
 			
-			// Check if message has already been interpreted
-			if (!type.equals("01") && messageAlreadyInterpreted(name, messageCounter)) {	
-				System.out.println("Message already interpreted");
-				sendPrivateMessage(name, "ACK", address, port);
-				continue;
-			}
 			
 			switch(type) {
 
@@ -106,13 +103,16 @@ public class Server {
 				break;
 				
 			case "01":		// Handshake
+
+				System.out.println("Adding client...");
 				
-				if (addClient(name, address, port))
+				// Add client with name, address, port and ack-socket port
+				if (addClient(name, address, port, Integer.parseInt(messageComponent[3])))
 				{
-					System.out.println("Adding client...");
-					String response = "OK";
+					String response = (0 + "|" + "OK");
 					buf = response.getBytes();
 					packet = new DatagramPacket(buf, buf.length, address, port);
+					
 					try {
 						m_socket.send(packet);
 					} catch (IOException e) {
@@ -152,16 +152,31 @@ public class Server {
 				
 			case "05":		// Message delivery acknowledgement
 				// Ack message
-				//acknowledgeMessage(name);
+				receivedAck(name);
 
-				System.out.println("MESSAGE RETURNED TO SERVER");
+				System.out.println("Client reception acknowledged");
 				break;
 				
 			default:
 				System.err.println("Error: unknown message type: " + messageComponent[0]);
 				
 			}
-			acknowledgeMessage(name, address, port);
+			
+			// Acks and handshakes are not acked
+			if (type.equals("01") || type.equals("05")) {
+				continue;
+			}
+			
+			// Check if message has already been interpreted
+			else if (messageAlreadyInterpreted(name, messageCounter)) {	
+				System.out.println("Message already interpreted");
+				continue;
+			}
+			
+			else {
+				acknowledgeMessage(name);
+			}
+			
 		} while (true);
 	}
 
@@ -169,12 +184,13 @@ public class Server {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
+			c.m_ackCounter++;
 			DatagramPacket message = pack(c.getAckCounter(), msg, c.getAddress(), c.getPort());
 			c.sendMessage(message, m_socket);
 		}
 	}
 
-	public boolean addClient(String name, InetAddress address, int port) {
+	public boolean addClient(String name, InetAddress address, int port, int ackPort) {
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
@@ -182,7 +198,7 @@ public class Server {
 				return false;	// Already exists a client with this name
 			}
 		}
-		m_connectedClients.add(new ClientConnection(name, address, port));
+		m_connectedClients.add(new ClientConnection(name, address, port, ackPort));
 		System.out.println("Added client " + name + " sucessfully");
 		return true;
 	}
@@ -213,20 +229,37 @@ public class Server {
 					c.m_messageCounter++;	// = clientMessageCounter;
 					return false;
 				}
+				else {
+					// Message has already been interpreted
+					return true;
+				}
 			}
 		}
-		// Message has already been interpreted
-		return true;
+		// Client not found
+		System.err.println("Error: client not found");
+		return false;
 	}
 
 	
-	public void acknowledgeMessage(String name, InetAddress address, int port) {
+	public void acknowledgeMessage(String name) {
+		System.out.println("Acknowledging message from " + name + "...");
 		ClientConnection c;
 		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if(c.hasName(name)) {
-				DatagramPacket message = pack(c.m_ackCounter, "ACK", address, port);
+				DatagramPacket message = pack(c.m_ackCounter, "ACK", c.getAddress(), c.getAckPort());
 				c.sendMessage(message, m_socket);
+			}
+		}
+	}
+
+	
+	public void receivedAck(String name) {
+		ClientConnection c;
+		for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			if(c.hasName(name)) {
+				c.acknowledgement.countDown();
 			}
 		}
 	}
@@ -269,6 +302,7 @@ public class Server {
 	public DatagramPacket pack(int ackCounter, String msg, InetAddress iadd, int port){
 		// Append message code and name to message, marshal packet and send it to assigned address and port
 		String message = ackCounter + "|" + msg;
+		System.out.println("Packed message: " + message);
 		byte[] data = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
 		
