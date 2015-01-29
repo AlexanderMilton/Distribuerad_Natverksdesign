@@ -23,17 +23,15 @@ public class ClientConnection {
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port;
-	private final int m_ackPort;
 
 	public CountDownLatch acknowledgement;
-	public int m_messageCounter = 0;
+	public int m_messageCounter = 1;	// Account for handshake
 	public int m_ackCounter = 0;
 	
-	public ClientConnection(String name, InetAddress address, int port, int ackPort) {
+	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
-		m_ackPort = ackPort;
 		acknowledgement = new CountDownLatch(1);
 	}
 
@@ -43,6 +41,8 @@ public class ClientConnection {
 		Random generator = new Random();
 		
 		DatagramPacket packet = message;
+		
+		m_ackCounter++;
 		
 		System.out.println("Sending on socket at port: " + socket.getLocalPort());
 		
@@ -63,11 +63,14 @@ public class ClientConnection {
 				
 				// Receive acknowledgment from Client via Server
 				try {
-					//socket.RESET TIMER
 					socket.receive(packet);
-					if (packet.getData().equals("ACK"))
+					String clientResponse = new String(packet.getData(), 0, packet.getLength());
+					
+					System.out.println("Client connection recieved message: " + clientResponse);
+					
+					if (clientResponse.equals("ACK"))
 					{
-						System.out.println("Ack received by client connection");
+						System.out.println("Ack received from client to client connection");
 						// Message was successfully sent and acknowledged by client
 						return;
 					}
@@ -81,16 +84,6 @@ public class ClientConnection {
 					e.printStackTrace();
 					System.err.println("Error: failed to receive acknowledgement");
 				}
-				
-				/*
-				// Receive acknowledgement from client via server
-				try {
-					acknowledgement.await();
-				} catch (InterruptedException e) {
-					System.err.println("Error: failed to receive acknowledgement");
-					e.printStackTrace();
-				}
-				*/
 				
 			} else {
 				// Message got lost
@@ -116,10 +109,6 @@ public class ClientConnection {
 	
 	public int getPort() {
 		return m_port;
-	}
-	
-	public int getAckPort() {
-		return m_ackPort;
 	}
 	
 	public int getMessageCounter() {

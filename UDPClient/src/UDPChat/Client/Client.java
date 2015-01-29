@@ -101,7 +101,7 @@ public class Client implements ActionListener {
 				return;
 			}
 			
-			m_connection.sendChatMessage(message, true);
+			m_connection.sendChatMessage(message);
 			
 		}
 		
@@ -109,7 +109,7 @@ public class Client implements ActionListener {
 		else if (input.length() > 0)
 		{
 			String message = "00" + "|" + m_connection.m_messageCounter + "|" + m_name + "|" + input;
-			m_connection.sendChatMessage(message, true);
+			m_connection.sendChatMessage(message);
 		}
 		
 		else
