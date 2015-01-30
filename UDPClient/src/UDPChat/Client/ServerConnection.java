@@ -12,6 +12,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 
@@ -125,10 +126,14 @@ public class ServerConnection
 
 	public void sendChatMessage(String msg)
 	{
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
+
+		
+		System.out.println("2) sendChatMessage(" + msg + ")");
 
 		// Randomize a failure variable
 		Random generator = new Random();
-		double failure = generator.nextDouble();
 
 		String message = msg;
 		message.trim();
@@ -139,8 +144,9 @@ public class ServerConnection
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
-
-			failure = generator.nextDouble();
+			double failure = generator.nextDouble();
+			
+			acknowledgment = new CountDownLatch(1);
 
 			if (failure > TRANSMISSION_FAILURE_RATE)
 			{
@@ -150,18 +156,26 @@ public class ServerConnection
 				{
 					System.out.println("Sending message: " + msg);
 					m_clientSocket.send(packet);
+					System.out.println("3) Message was successfullt sent");
 				} catch (IOException e)
 				{
 					e.printStackTrace();
-					System.out.println("Failed to send, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
 				}
 
 				// Receive server acknowledgment
 				try
 				{
-					acknowledgment.await();
-					System.out.println("Received server acknowledgment.");
-					return;
+					if(acknowledgment.await(1000, TimeUnit.MILLISECONDS))
+					{
+
+						System.out.println("9) CDL is released in sendChatMessage");
+						System.out.println("Received server acknowledgment message after " + i + " attempts");
+						return;
+					}
+					else
+					{
+						System.err.println("Server acknowledgment timed out");
+					}
 				} catch (InterruptedException e)
 				{
 					System.err.println("Failed to receive server acknowledgment");
@@ -189,6 +203,7 @@ public class ServerConnection
 		try
 		{
 			m_clientSocket.receive(packet);
+			System.out.println("7) Acknowledgment should be recieved by client in receiveChatMessage");
 		} catch (IOException e)
 		{
 			System.err.println("Error: client failed to receive packet.");
@@ -203,6 +218,8 @@ public class ServerConnection
 		
 		if (messageComponent[1].equals("ACK") && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
 		{
+
+			System.out.println("8) Message is \"ACK\", AC is incremented and CDL released");
 			System.out.println("Received ack, incrementing ack counter");
 			m_ackCounter++;
 			acknowledgment.countDown();
@@ -218,6 +235,11 @@ public class ServerConnection
 
 	public void returnAck()
 	{
+
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
+
+		System.out.println("11) A message has been received and acknowledgment will be returned");
 		// Randomize a failure variable
 		Random generator = new Random();
 		DatagramPacket packet = pack("05" + "|" + m_messageCounter + "|" + m_name);
@@ -225,7 +247,7 @@ public class ServerConnection
 		System.out.println("Sending on socket at port: " + m_clientSocket.getLocalPort());
 
 		// Make a number of attempts to send the message
-		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
+		//for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
 
 			double failure = generator.nextDouble();
@@ -247,7 +269,7 @@ public class ServerConnection
 			} else
 			{
 				// Message got lost
-				//System.out.println("Message lost on client side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+				System.out.println("Message lost on client side");
 			}
 		}
 		// Message failed to send

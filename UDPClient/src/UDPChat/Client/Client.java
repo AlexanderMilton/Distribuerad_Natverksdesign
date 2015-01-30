@@ -57,9 +57,13 @@ public class Client implements ActionListener
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do
-		{	String message = m_connection.receiveChatMessage();
-			if(message != null)
+		{	
+			String message = m_connection.receiveChatMessage();
+			//if(message != null)
+			{
+				System.out.println("10) Message is received by Client and displayed in the GUI interface");
 				m_GUI.displayMessage(m_connection.receiveChatMessage());
+			} 
 		} while (true);
 	}
 
@@ -71,6 +75,8 @@ public class Client implements ActionListener
 	{
 		// Get input from GUI window
 		String input = m_GUI.getInput();
+
+		System.out.println("1) Got input, incrementing clients MC");
 
 		// Increment message counter
 		m_connection.m_messageCounter++;

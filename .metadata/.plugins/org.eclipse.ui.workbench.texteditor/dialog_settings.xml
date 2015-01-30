@@ -1,28 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
-		<item value="257" key="DIALOG_WIDTH"/>
-		<item value="404" key="DIALOG_Y_ORIGIN"/>
-		<item value="868" key="DIALOG_X_ORIGIN"/>
-		<item value="376" key="DIALOG_HEIGHT"/>
-		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
-	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item value="true" key="wrap"/>
-		<item value="false" key="casesensitive"/>
 		<item value="false" key="isRegEx"/>
+		<item value="acknowledgment" key="selection"/>
+		<item value="true" key="casesensitive"/>
 		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
-		<item value="ack" key="selection"/>
 		<list key="findhistory">
-			<item value="ack"/>
+			<item value="acknowledgment"/>
+			<item value="ACK"/>
+			<item value="counter"/>
+			<item value="returnA"/>
+			<item value="8"/>
+			<item value="acknowledgeMessage"/>
 			<item value="returnAck"/>
-			<item value="05"/>
-			<item value="lost"/>
-			<item value="acknowledgement"/>
-			<item value="Packed"/>
-			<item value="Received"/>
-			<item value="&quot;ACK&quot;"/>
+			<item value="&quot;ACK"/>
 		</list>
 		<list key="replacehistory">
 			<item value="acknowledgment"/>
@@ -30,5 +23,12 @@
 			<item value="m_clientSocket"/>
 			<item value="m_serverSocket"/>
 		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="257" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="376" key="DIALOG_HEIGHT"/>
+		<item value="932" key="DIALOG_Y_ORIGIN"/>
+		<item value="787" key="DIALOG_X_ORIGIN"/>
 	</section>
 </section>

@@ -10,6 +10,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 
@@ -25,7 +26,7 @@ public class ClientConnection
 	private final InetAddress m_address;
 	private final int m_port;
 
-	public CountDownLatch acknowledgement;
+	public CountDownLatch acknowledgment;
 	public int m_messageCounter = 0;
 	public int m_ackCounter = 0;
 
@@ -34,14 +35,19 @@ public class ClientConnection
 		m_name = name;
 		m_address = address;
 		m_port = port;
-		acknowledgement = new CountDownLatch(1);
+		acknowledgment = new CountDownLatch(1);
 	}
 
 	public void sendMessage(DatagramPacket message, DatagramSocket socket)
 	{
 
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
+		
 		// Randomize a failure variable
 		Random generator = new Random();
+
+		acknowledgment = new CountDownLatch(1);
 
 		DatagramPacket packet = message;
 
@@ -52,7 +58,6 @@ public class ClientConnection
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
-
 			double failure = generator.nextDouble();
 
 			if (failure > TRANSMISSION_FAILURE_RATE)
@@ -69,47 +74,24 @@ public class ClientConnection
 				}
 
 				// Receive acknowledgment from Client via Server
-				try
-				{
-					acknowledgement.await();
-					System.out.println("Client has acknowledged message");
-				} catch (InterruptedException e)
-				{
-					System.err.println("Failed to receive acknowledgment from client");
-					e.printStackTrace();
-				}
 				
-				/*try
-				{
-					socket.receive(packet);
-					String clientResponse = new String(packet.getData(), 0, packet.getLength());
-					//String[] clientResponseComponent = clientResponse.split("\\|");
-
-					System.out.println("client connection address: " + socket.getLocalAddress());
-					System.out.println("client connection port: " + socket.getLocalPort());
-					System.out.println("client connection recieved message: " + clientResponse);
-
-					if (clientResponse.equals("ACK"))
+					try
 					{
-						// Message was successfully sent and acknowledged
-						System.out.println("Ack received from client to client connection");
+						acknowledgment.await();
+						System.out.println("Received client acknowledgment message after " + i + " attempts");
 						return;
-					} else
+					} catch (InterruptedException e)
 					{
-						// Non-ack message was received
-						System.err.println("Error: expected ack from client: " + clientResponse);
-						continue;
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-				} catch (IOException e)
-				{
-					e.printStackTrace();
-					System.err.println("Error: failed to receive acknowledgement");
-				}*/
+					
+					
 
 			} else
 			{
 				// Message got lost
-				System.out.println("Message lost on server side");
+				//System.out.println("Message lost on server side");
 			}
 		}
 		// Message failed to send, decrement ack counter
@@ -119,6 +101,10 @@ public class ClientConnection
 
 	public void returnAck(DatagramPacket message, DatagramSocket socket)
 	{
+
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
+		
 		// Randomize a failure variable
 		Random generator = new Random();
 		DatagramPacket packet = message;
@@ -126,7 +112,7 @@ public class ClientConnection
 		System.out.println("Sending on socket at port: " + socket.getLocalPort());
 
 		// Make a number of attempts to send the message
-		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
+		//for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
 
 			double failure = generator.nextDouble();
@@ -138,6 +124,7 @@ public class ClientConnection
 				try
 				{
 					socket.send(packet);
+					System.out.println("6) Only-once acknowledgment was sent to client from client connection");
 					return;
 				} catch (IOException e)
 				{
@@ -148,7 +135,7 @@ public class ClientConnection
 			} else
 			{
 				// Message got lost
-				System.out.println("Message lost on server side");
+				//System.out.println("Message lost on server side");
 			}
 		}
 		// Message failed to send

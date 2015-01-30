@@ -72,6 +72,8 @@ public class Server
 				e1.printStackTrace();
 			}
 
+			System.out.println("4) Server received message");
+
 			// Unpack message
 			String message = unpack(packet);
 
@@ -96,11 +98,11 @@ public class Server
 			int messageCounter = Integer.parseInt(messageComponent[1]);
 			String name = messageComponent[2];
 
-			System.out.println("address: " + address);
-			System.out.println("port: " + port);
-			System.out.println("type: " + type);
-			System.out.println("messageCounter: " + messageCounter);
-			System.out.println("name: " + name);
+//			System.out.println("address: " + address);
+//			System.out.println("port: " + port);
+//			System.out.println("type: " + type);
+//			System.out.println("messageCounter: " + messageCounter);
+//			System.out.println("name: " + name);
 
 			// Check if message has already been interpreted
 			if (!type.equals("01") && messageAlreadyInterpreted(name, messageCounter))
@@ -110,10 +112,9 @@ public class Server
 				continue;
 			}
 
-			// Check if message has already been interpreted
+			// Uninterpreted, non-connection request messages are acknowledged
 			else if (!type.equals("01"))
 			{
-				System.out.println("Acknowledging message");
 				acknowledgeMessage(name, "ACK", address, port);
 			}
 			
@@ -234,7 +235,7 @@ public class Server
 			{
 				System.out.println("clientConnection MC: " + c.getMessageCounter());
 				System.out.println("serverConnection MC: " + clientMessageCounter);
-				if (c.getMessageCounter() < clientMessageCounter)
+				if (c.getMessageCounter() <= clientMessageCounter)
 				{
 					// Message has not been interpreted
 					c.m_messageCounter++; // = clientMessageCounter;
@@ -252,6 +253,8 @@ public class Server
 
 	public void acknowledgeMessage(String name, String msg, InetAddress address, int port)
 	{
+		System.out.println("5) Message is being acknowledged by server");
+		
 		System.out.println("Acknowledging message from " + name + "...");
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
@@ -273,7 +276,7 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				c.acknowledgement.countDown();
+				c.acknowledgment.countDown();
 			}
 		}
 	}
