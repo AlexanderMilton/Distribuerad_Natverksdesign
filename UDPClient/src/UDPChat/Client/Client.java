@@ -57,8 +57,9 @@ public class Client implements ActionListener
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do
-		{
-			m_GUI.displayMessage(m_connection.receiveChatMessage());
+		{	String message = m_connection.receiveChatMessage();
+			if(message != null)
+				m_GUI.displayMessage(m_connection.receiveChatMessage());
 		} while (true);
 	}
 
@@ -116,6 +117,7 @@ public class Client implements ActionListener
 
 			default:
 				System.err.println("Error: invalid command");
+				m_connection.m_messageCounter--;
 				m_GUI.clearInput();
 				return;
 			}

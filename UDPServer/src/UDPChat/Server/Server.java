@@ -17,7 +17,6 @@ public class Server
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private DatagramSocket m_socket;
-	private DatagramSocket m_ackSocket;
 
 	public static void main(String[] args)
 	{
@@ -42,7 +41,6 @@ public class Server
 		try
 		{
 			m_socket = new DatagramSocket(portNumber);
-			m_ackSocket = new DatagramSocket(portNumber + 1);
 		} catch (SocketException e)
 		{
 			System.err.println("Error: failed to create socket.");
@@ -50,7 +48,6 @@ public class Server
 		}
 
 		System.out.println("Created socket at port " + m_socket.getLocalPort());
-		System.out.println("Created ack socket at port " + m_ackSocket.getLocalPort());
 
 	}
 
@@ -60,9 +57,8 @@ public class Server
 
 		do
 		{
-
 			// Check if all clients are still connected
-			pollClientConnectionStatus();
+			//pollClientConnectionStatus();
 
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -114,6 +110,13 @@ public class Server
 				continue;
 			}
 
+			// Check if message has already been interpreted
+			else if (!type.equals("01"))
+			{
+				System.out.println("Acknowledging message");
+				acknowledgeMessage(name, "ACK", address, port);
+			}
+			
 			switch (type)
 			{
 
@@ -157,14 +160,6 @@ public class Server
 				sendPrivateMessage(recepient, whisper, address, port);
 				break;
 
-			/*
-			 * ^ old code, on ICE ^ String whisperer = messageComponent[3];
-			 * System.out.println("Sending private message: " +
-			 * messageComponent[3] + " to client " + whisperer);
-			 * sendPrivateMessage(messageComponent[3], whisperer, address,
-			 * port); break;
-			 */
-
 			case "03": // List request
 				// Send a list of all clients
 				printClientList(name, address, port);
@@ -174,13 +169,11 @@ public class Server
 				// Disconnect user
 				disconnectClient(name);
 				break;
-
-			/*
-			 * case "05": // Message delivery acknowledgement // Ack message
-			 * receivedAck(name);
-			 * 
-			 * System.out.println("Client reception acknowledged"); break;
-			 */
+			
+			case "05": // Message delivery acknowledgement // Ack message
+				receivedAck(name);
+				System.out.println("Client reception acknowledged"); 
+				break;
 
 			default:
 				System.err.println("Error: unknown message type: " + messageComponent[0]);
@@ -225,9 +218,7 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-
 				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
-
 				c.sendMessage(message, m_socket);
 			}
 		}
@@ -268,13 +259,13 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				DatagramPacket message = pack(c.getAckCounter(), "ACK", address, port);
+				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
 				c.returnAck(message, m_socket);
 			}
 		}
 	}
 
-	/*public void receivedAck(String name)
+	public void receivedAck(String name)
 	{
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
@@ -285,7 +276,7 @@ public class Server
 				c.acknowledgement.countDown();
 			}
 		}
-	}*/
+	}
 
 	public void printClientList(String name, InetAddress address, int port)
 	{

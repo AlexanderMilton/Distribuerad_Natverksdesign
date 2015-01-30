@@ -26,7 +26,7 @@ public class ClientConnection
 	private final int m_port;
 
 	public CountDownLatch acknowledgement;
-	public int m_messageCounter = 1; // Account for handshake
+	public int m_messageCounter = 0;
 	public int m_ackCounter = 0;
 
 	public ClientConnection(String name, InetAddress address, int port)
@@ -71,22 +71,27 @@ public class ClientConnection
 				// Receive acknowledgment from Client via Server
 				try
 				{
+					acknowledgement.await();
+					System.out.println("Client has acknowledged message");
+				} catch (InterruptedException e)
+				{
+					System.err.println("Failed to receive acknowledgment from client");
+					e.printStackTrace();
+				}
+				
+				/*try
+				{
 					socket.receive(packet);
 					String clientResponse = new String(packet.getData(), 0, packet.getLength());
 					//String[] clientResponseComponent = clientResponse.split("\\|");
-					
-					socket.getLocalAddress();
-					socket.getLocalPort();
 
 					System.out.println("client connection address: " + socket.getLocalAddress());
 					System.out.println("client connection port: " + socket.getLocalPort());
-					
-					System.out.println("Client connection recieved message: " + clientResponse);
+					System.out.println("client connection recieved message: " + clientResponse);
 
 					if (clientResponse.equals("ACK"))
 					{
-						// Message was successfully sent and acknowledged by
-						// client
+						// Message was successfully sent and acknowledged
 						System.out.println("Ack received from client to client connection");
 						return;
 					} else
@@ -99,7 +104,7 @@ public class ClientConnection
 				{
 					e.printStackTrace();
 					System.err.println("Error: failed to receive acknowledgement");
-				}
+				}*/
 
 			} else
 			{
