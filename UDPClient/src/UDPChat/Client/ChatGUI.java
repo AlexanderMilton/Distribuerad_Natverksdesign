@@ -18,7 +18,8 @@ import javax.swing.JTextField;
  * 
  * @author brom
  */
-public class ChatGUI extends JFrame implements ActionListener {
+public class ChatGUI extends JFrame implements ActionListener
+{
 	// This class should be sufficiently complete, although
 	// you are allowed to change it if you wish.
 
@@ -29,7 +30,8 @@ public class ChatGUI extends JFrame implements ActionListener {
 	private final JTextField m_chatInput;
 	private final JTextArea m_chatOutput;
 
-	public ChatGUI(ActionListener listener, String userName) {
+	public ChatGUI(ActionListener listener, String userName)
+	{
 		setSize(700, 500);
 		setTitle("Chat client for " + userName);
 
@@ -52,20 +54,24 @@ public class ChatGUI extends JFrame implements ActionListener {
 		setVisible(true);
 	}
 
-	public void displayMessage(String message) {
+	public void displayMessage(String message)
+	{
 		m_chatOutput.append(message + "\n");
 	}
 
-	public String getInput() {
+	public String getInput()
+	{
 		return m_chatInput.getText();
 	}
 
-	public void clearInput() {
+	public void clearInput()
+	{
 		m_chatInput.setText("");
 	}
 
 	@Override
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(ActionEvent e)
+	{
 		System.out.println(e.getActionCommand());
 	}
 }
