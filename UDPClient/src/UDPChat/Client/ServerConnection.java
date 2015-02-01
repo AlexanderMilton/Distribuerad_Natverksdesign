@@ -135,18 +135,20 @@ public class ServerConnection
 		// Randomize a failure variable
 		Random generator = new Random();
 
+		// Trim message
 		String message = msg;
 		message.trim();
 
 		// Pack message with the given type
 		DatagramPacket packet = pack(message);
+		
+		// Set latch to 1
+		acknowledgment = new CountDownLatch(1);
 
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
 			double failure = generator.nextDouble();
-			
-			acknowledgment = new CountDownLatch(1);
 
 			if (failure > TRANSMISSION_FAILURE_RATE)
 			{
@@ -157,6 +159,7 @@ public class ServerConnection
 					System.out.println("Sending message: " + msg);
 					m_clientSocket.send(packet);
 					System.out.println("3) Message was successfullt sent");
+					return;	// TODO: Remove if receiving in same function
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -186,7 +189,7 @@ public class ServerConnection
 			else
 			{
 				// Message got lost
-				//System.err.println("Ack lost on client side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+				System.err.println("Message lost on client side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
 			}
 		}
 		// Message failed to send, decrement message counter
@@ -196,6 +199,7 @@ public class ServerConnection
 
 	public String receiveChatMessage()
 	{
+		System.out.println("1.5) Blocking message receive");
 
 		byte[] buf = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -216,19 +220,19 @@ public class ServerConnection
 
 		System.out.println("Received message: " + message);
 		
-		if (messageComponent[1].equals("ACK") && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
+		if (messageComponent[1].equals("ACK"))// && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
 		{
 
 			System.out.println("8) Message is \"ACK\", AC is incremented and CDL released");
 			System.out.println("Received ack, incrementing ack counter");
 			m_ackCounter++;
 			acknowledgment.countDown();
-			return null;
+			return "";
 		}
 	
 		else 
 		{
-			returnAck();
+			//returnAck();
 			return messageComponent[1];
 		}
 	}

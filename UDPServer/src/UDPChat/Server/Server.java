@@ -57,6 +57,8 @@ public class Server
 
 		do
 		{
+			System.out.println("3.5) Blocking message receive");
+			
 			// Check if all clients are still connected
 			//pollClientConnectionStatus();
 
@@ -104,16 +106,16 @@ public class Server
 //			System.out.println("messageCounter: " + messageCounter);
 //			System.out.println("name: " + name);
 
-			// Check if message has already been interpreted
+			/*// Check if message has already been interpreted
 			if (!type.equals("01") && messageAlreadyInterpreted(name, messageCounter))
 			{
 				System.out.println("Message already interpreted");
-				acknowledgeMessage(name, "ACK", address, port);
+				//acknowledgeMessage(name, "ACK", address, port);
 				continue;
 			}
 
 			// Uninterpreted, non-connection request messages are acknowledged
-			else if (!type.equals("01"))
+			else*/ if (!type.equals("01"))
 			{
 				acknowledgeMessage(name, "ACK", address, port);
 			}
@@ -155,10 +157,11 @@ public class Server
 				break;
 
 			case "02": // Private message
+				
 				String recepient = messageComponent[3];
-				String whisper = messageComponent[4];
+				String whisper = name + " whispers: " + messageComponent[4];
 				System.out.println("Sending private message: " + whisper + " to client " + recepient);
-				sendPrivateMessage(recepient, whisper, address, port);
+				sendPrivateMessage(recepient, whisper);
 				break;
 
 			case "03": // List request
@@ -211,15 +214,15 @@ public class Server
 		return true;
 	}
 
-	public void sendPrivateMessage(String name, String msg, InetAddress address, int port)
+	public void sendPrivateMessage(String recepient, String whisper)
 	{
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
-			if (c.hasName(name))
+			if (c.hasName(recepient))
 			{
-				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
+				DatagramPacket message = pack(c.getAckCounter(), whisper, c.getAddress(), c.getPort());
 				c.sendMessage(message, m_socket);
 			}
 		}
@@ -290,7 +293,7 @@ public class Server
 			c = itr.next();
 			clientList += ("> " + c.getName() + System.getProperty("line.separator"));
 		}
-		sendPrivateMessage(name, clientList.toString(), address, port);
+		sendPrivateMessage(name, clientList.toString());
 	}
 
 	public void disconnectClient(String name)
@@ -302,6 +305,7 @@ public class Server
 			if (c.hasName(name))
 			{
 				broadcast(name + " left the chat");
+				m_connectedClients.remove(c);
 				c = null;
 				return;
 			}

@@ -59,10 +59,10 @@ public class Client implements ActionListener
 		do
 		{	
 			String message = m_connection.receiveChatMessage();
-			//if(message != null)
+			if(!message.isEmpty())
 			{
 				System.out.println("10) Message is received by Client and displayed in the GUI interface");
-				m_GUI.displayMessage(m_connection.receiveChatMessage());
+				m_GUI.displayMessage(message);
 			} 
 		} while (true);
 	}
@@ -77,6 +77,7 @@ public class Client implements ActionListener
 		String input = m_GUI.getInput();
 
 		System.out.println("1) Got input, incrementing clients MC");
+		System.out.println("Input: " + input);
 
 		// Increment message counter
 		m_connection.m_messageCounter++;
@@ -84,7 +85,7 @@ public class Client implements ActionListener
 		// Forward slash expects a command with our without argument and message
 		if (input.startsWith("/"))
 		{
-			String[] stringArray = input.split(" ", 2);
+			String[] stringArray = input.split(" ", 3);
 			String message = null;
 			stringArray[0].toLowerCase();
 
@@ -99,6 +100,7 @@ public class Client implements ActionListener
 			// Send private message
 			case "/whisper":
 			case "/w":
+				
 				message = "02" + "|" + m_connection.m_messageCounter + "|"
 						+ m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;

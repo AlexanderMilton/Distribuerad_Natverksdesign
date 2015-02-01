@@ -67,6 +67,7 @@ public class ClientConnection
 				try
 				{
 					socket.send(packet);
+					return;	// TODO: Remove if receiving in same function
 				} catch (IOException e)
 				{
 					System.err.println("Error: failed to send message to client");
@@ -75,7 +76,7 @@ public class ClientConnection
 
 				// Receive acknowledgment from Client via Server
 				
-					try
+					/*try
 					{
 						acknowledgment.await();
 						System.out.println("Received client acknowledgment message after " + i + " attempts");
@@ -84,14 +85,14 @@ public class ClientConnection
 					{
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-					}
+					}*/
 					
 					
 
 			} else
 			{
 				// Message got lost
-				//System.out.println("Message lost on server side");
+				System.out.println("Message lost on server side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
 			}
 		}
 		// Message failed to send, decrement ack counter
