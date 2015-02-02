@@ -1,0 +1,29 @@
+package UDPChat.Server;
+
+//
+// Source file for the server side. 
+//
+// Created by Sanny Syberfeldt
+// Maintained by Marcus Brohede
+//
+
+import java.net.*;
+//import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+
+public class Latch 
+{
+	public CountDownLatch poll = new CountDownLatch(0);
+	
+	public void resetLatch()
+	{
+		poll = new CountDownLatch(0);
+	}
+	
+	public void decrementLatch()
+	{
+		poll.countDown();
+	}
+}

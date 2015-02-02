@@ -57,9 +57,22 @@ public class Client implements ActionListener
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do
-		{	String message = m_connection.receiveChatMessage();
-			if(message != null)
-				m_GUI.displayMessage(m_connection.receiveChatMessage());
+		{	
+			String message = m_connection.receiveChatMessage();
+			
+			if(!message.isEmpty())
+				m_GUI.displayMessage(message);
+			
+			// Terminate client if socket has been closed
+			if (m_connection.m_socket.isClosed())
+			{
+				try {
+					Thread.sleep(1500);
+				} catch(InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+				System.exit(0);
+			}
 		} while (true);
 	}
 
@@ -72,13 +85,16 @@ public class Client implements ActionListener
 		// Get input from GUI window
 		String input = m_GUI.getInput();
 
+		System.out.println("1) Got input, incrementing clients MC");
+		System.out.println("Input: " + input);
+
 		// Increment message counter
 		m_connection.m_messageCounter++;
 
 		// Forward slash expects a command with our without argument and message
 		if (input.startsWith("/"))
 		{
-			String[] stringArray = input.split(" ", 2);
+			String[] stringArray = input.split(" ", 3);
 			String message = null;
 			stringArray[0].toLowerCase();
 
@@ -93,6 +109,7 @@ public class Client implements ActionListener
 			// Send private message
 			case "/whisper":
 			case "/w":
+				
 				message = "02" + "|" + m_connection.m_messageCounter + "|"
 						+ m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;
@@ -110,8 +127,7 @@ public class Client implements ActionListener
 			case "/exit":
 			case "/dc":
 
-				message = "04" + "|" + m_connection.m_messageCounter + "|"
-						+ m_name;
+				message = "04" + "|" + m_connection.m_messageCounter + "|"	+ m_name;
 
 				break;
 
