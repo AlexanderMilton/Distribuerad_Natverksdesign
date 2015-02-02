@@ -242,12 +242,12 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				System.out.println("clientConnection MC: " + c.getMessageCounter());
-				System.out.println("serverConnection MC: " + clientMessageCounter);
+//				System.out.println("clientConnection MC: " + c.getMessageCounter());
+//				System.out.println("serverConnection MC: " + clientMessageCounter);
 				if (c.getMessageCounter() <= clientMessageCounter)
 				{
 					// Message has not been interpreted
-					c.m_messageCounter++; // = clientMessageCounter;
+//					c.m_messageCounter++; // = clientMessageCounter;
 					return false;
 				} else
 				{

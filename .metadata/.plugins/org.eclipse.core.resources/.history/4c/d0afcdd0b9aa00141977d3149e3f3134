@@ -163,14 +163,14 @@ public class ClientConnection
 		return m_port;
 	}
 
-	public int getMessageCounter()
-	{
-		return 1;
-	}
-
-	public int getAckCounter()
-	{
-		return 1;
-	}
+//	public int getMessageCounter()
+//	{
+//		return m_messageCounter;
+//	}
+//
+//	public int getAckCounter()
+//	{
+//		return m_ackCounter;
+//	}
 
 }

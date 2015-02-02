@@ -31,8 +31,8 @@ public class ServerConnection
 	public DatagramSocket m_socket = null;
 
 	public CountDownLatch acknowledgment;
-	public int m_messageCounter = 0;	// Start at one to be ahead of server
-	private int m_ackCounter = 0;
+//	public int m_messageCounter = 0;	// Start at one to be ahead of server
+//	private int m_ackCounter = 0;
 
 	public ServerConnection(String hostName, int port, String name)
 	{
@@ -85,7 +85,7 @@ public class ServerConnection
 		try
 		{
 			System.out.println("Sending handshake to server...");
-			m_socket.send(pack("01" + "|" + m_messageCounter + "|" + name));
+			m_socket.send(pack("01" + "|" + 1 + "|" + name));
 		} catch (IOException e)
 		{
 			System.err.println("Failed to send handshake from client");
@@ -126,8 +126,8 @@ public class ServerConnection
 
 	public void sendChatMessage(String msg)
 	{
-		System.out.println("messageCounter: " + m_messageCounter);
-		System.out.println("ackCounter: " + m_ackCounter);
+//		System.out.println("messageCounter: " + m_messageCounter);
+//		System.out.println("ackCounter: " + m_ackCounter);
 
 		
 		System.out.println("2) sendChatMessage(" + msg + ")");
@@ -193,7 +193,7 @@ public class ServerConnection
 			}
 		}
 		// Message failed to send, decrement message counter
-		m_messageCounter--;
+//		m_messageCounter--;
 		System.err.println("Error: failed to send message");
 	}
 
@@ -225,7 +225,7 @@ public class ServerConnection
 
 			System.out.println("8) Message is \"ACK\", AC is incremented and CDL released");
 			System.out.println("Received ack, incrementing ack counter");
-			m_ackCounter++;
+//			m_ackCounter++;
 			acknowledgment.countDown();
 			return "";
 		}
@@ -238,7 +238,7 @@ public class ServerConnection
 		
 		else if (messageComponent[1].equals("%POLL%"))
 		{
-			sendChatMessage("06|" + m_messageCounter + "|" + m_name);
+			sendChatMessage("06|" + 1 + "|" + m_name);
 			return "";
 		}
 		
@@ -252,13 +252,13 @@ public class ServerConnection
 	public void returnAck()
 	{
 
-		System.out.println("messageCounter: " + m_messageCounter);
-		System.out.println("ackCounter: " + m_ackCounter);
+//		System.out.println("messageCounter: " + m_messageCounter);
+//		System.out.println("ackCounter: " + m_ackCounter);
 
 		System.out.println("11) A message has been received and acknowledgment will be returned");
 		// Randomize a failure variable
 		Random generator = new Random();
-		DatagramPacket packet = pack("05" + "|" + m_messageCounter + "|" + m_name);
+		DatagramPacket packet = pack("05" + "|" + 1 + "|" + m_name);
 
 		System.out.println("Sending on socket at port: " + m_socket.getLocalPort());
 

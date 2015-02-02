@@ -165,12 +165,12 @@ public class ClientConnection
 
 	public int getMessageCounter()
 	{
-		return 1;
+		return m_messageCounter;
 	}
 
 	public int getAckCounter()
 	{
-		return 1;
+		return m_ackCounter;
 	}
 
 }

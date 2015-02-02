@@ -27,8 +27,8 @@ public class ClientConnection
 	private final int m_port;
 
 	public CountDownLatch acknowledgment;
-	//public int m_messageCounter = 0;
-	//public int m_ackCounter = 0;
+	public int m_messageCounter = 0;
+	public int m_ackCounter = 0;
 
 	public ClientConnection(String name, InetAddress address, int port)
 	{
@@ -41,8 +41,8 @@ public class ClientConnection
 	public void sendMessage(DatagramPacket message, DatagramSocket socket)
 	{
 
-//		System.out.println("messageCounter: " + m_messageCounter);
-//		System.out.println("ackCounter: " + m_ackCounter);
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
 		
 		// Randomize a failure variable
 		Random generator = new Random();
@@ -51,7 +51,7 @@ public class ClientConnection
 
 		DatagramPacket packet = message;
 
-//		m_ackCounter++;
+		m_ackCounter++;
 
 		System.out.println("Sending on socket at port: " + socket.getLocalPort());
 
@@ -96,15 +96,15 @@ public class ClientConnection
 			}
 		}
 		// Message failed to send, decrement ack counter
-//		m_ackCounter--;
+		m_ackCounter--;
 		System.err.println("Error: failed to send message");
 	}
 
 	public void returnAck(DatagramPacket message, DatagramSocket socket)
 	{
 
-//		System.out.println("messageCounter: " + m_messageCounter);
-//		System.out.println("ackCounter: " + m_ackCounter);
+		System.out.println("messageCounter: " + m_messageCounter);
+		System.out.println("ackCounter: " + m_ackCounter);
 		
 		// Randomize a failure variable
 		Random generator = new Random();
@@ -165,12 +165,12 @@ public class ClientConnection
 
 	public int getMessageCounter()
 	{
-		return 1;
+		return m_messageCounter;
 	}
 
 	public int getAckCounter()
 	{
-		return 1;
+		return m_ackCounter;
 	}
 
 }

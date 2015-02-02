@@ -89,7 +89,7 @@ public class Client implements ActionListener
 		System.out.println("Input: " + input);
 
 		// Increment message counter
-//		m_connection.m_messageCounter++;
+		m_connection.m_messageCounter++;
 
 		// Forward slash expects a command with our without argument and message
 		if (input.startsWith("/"))
