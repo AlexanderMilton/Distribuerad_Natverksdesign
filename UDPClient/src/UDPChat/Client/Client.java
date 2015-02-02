@@ -59,11 +59,20 @@ public class Client implements ActionListener
 		do
 		{	
 			String message = m_connection.receiveChatMessage();
+			
 			if(!message.isEmpty())
-			{
-				System.out.println("10) Message is received by Client and displayed in the GUI interface");
 				m_GUI.displayMessage(message);
-			} 
+			
+			// Terminate client if socket has been closed
+			if (m_connection.m_socket.isClosed())
+			{
+				try {
+					Thread.sleep(1500);
+				} catch(InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+				System.exit(0);
+			}
 		} while (true);
 	}
 
@@ -118,8 +127,7 @@ public class Client implements ActionListener
 			case "/exit":
 			case "/dc":
 
-				message = "04" + "|" + m_connection.m_messageCounter + "|"
-						+ m_name;
+				message = "04" + "|" + m_connection.m_messageCounter + "|"	+ m_name;
 
 				break;
 

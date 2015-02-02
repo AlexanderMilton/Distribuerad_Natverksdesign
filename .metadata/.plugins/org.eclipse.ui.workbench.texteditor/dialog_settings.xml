@@ -2,22 +2,24 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="returnA" key="selection"/>
+		<item value="poll" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
-			<item value="returnA"/>
-			<item value="returna"/>
-			<item value="ret"/>
-			<item value="acknowledgment"/>
-			<item value="ACK"/>
-			<item value="counter"/>
-			<item value="8"/>
-			<item value="acknowledgeMessage"/>
+			<item value="poll"/>
+			<item value="class"/>
+			<item value="runnab"/>
+			<item value="pollRes"/>
+			<item value="cS"/>
+			<item value="05"/>
+			<item value="m_clientSocket"/>
+			<item value="sendPrivateMessage"/>
 		</list>
 		<list key="replacehistory">
+			<item value="pollRes"/>
+			<item value="m_socket"/>
 			<item value="acknowledgment"/>
 			<item value="getName"/>
 			<item value="m_clientSocket"/>

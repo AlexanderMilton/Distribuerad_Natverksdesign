@@ -28,7 +28,7 @@ public class ServerConnection
 	private String m_name;
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
-	private DatagramSocket m_clientSocket = null;
+	public DatagramSocket m_socket = null;
 
 	public CountDownLatch acknowledgment;
 	public int m_messageCounter = 0;	// Start at one to be ahead of server
@@ -54,7 +54,7 @@ public class ServerConnection
 		// Create sockets
 		try
 		{
-			m_clientSocket = new DatagramSocket();
+			m_socket = new DatagramSocket();
 			// m_clientAckSocket = new DatagramSocket();
 			// m_serverSocket = new DatagramSocket(m_serverPort);
 		} catch (SocketException e)
@@ -63,14 +63,14 @@ public class ServerConnection
 			System.err.println("Error: invalid port.");
 		}
 
-		System.out.println("m_clientSocket port: " + m_clientSocket.getLocalPort());
+		System.out.println("m_socket port: " + m_socket.getLocalPort());
 		System.out.println("Server address: " + m_serverAddress);
 		System.out.println("Server port: " + m_serverPort + "\n");
 	}
 
 	public boolean handshake(String name)
 	{
-
+		
 		// Verify valid name length
 		if (name.length() > 20)
 		{
@@ -85,7 +85,7 @@ public class ServerConnection
 		try
 		{
 			System.out.println("Sending handshake to server...");
-			m_clientSocket.send(pack("01" + "|" + m_messageCounter + "|" + name));
+			m_socket.send(pack("01" + "|" + m_messageCounter + "|" + name));
 		} catch (IOException e)
 		{
 			System.err.println("Failed to send handshake from client");
@@ -99,7 +99,7 @@ public class ServerConnection
 		try 
 		{ 
 			System.out.println("Receiving handshake from server...");
-			m_clientSocket.receive(handshakeResponse);
+			m_socket.receive(handshakeResponse);
 		} catch (IOException e) {
 			System.err.println("Failed to receive packet"); e.printStackTrace();
 		}
@@ -157,7 +157,7 @@ public class ServerConnection
 				try
 				{
 					System.out.println("Sending message: " + msg);
-					m_clientSocket.send(packet);
+					m_socket.send(packet);
 					System.out.println("3) Message was successfullt sent");
 					return;	// TODO: Remove if receiving in same function
 				} catch (IOException e)
@@ -206,7 +206,7 @@ public class ServerConnection
 
 		try
 		{
-			m_clientSocket.receive(packet);
+			m_socket.receive(packet);
 			System.out.println("7) Acknowledgment should be recieved by client in receiveChatMessage");
 		} catch (IOException e)
 		{
@@ -220,7 +220,7 @@ public class ServerConnection
 
 		System.out.println("Received message: " + message);
 		
-		if (messageComponent[1].equals("ACK"))// && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
+		if (messageComponent[1].equals("%ACK%"))// && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
 		{
 
 			System.out.println("8) Message is \"ACK\", AC is incremented and CDL released");
@@ -229,7 +229,19 @@ public class ServerConnection
 			acknowledgment.countDown();
 			return "";
 		}
-	
+		
+		else if (messageComponent[1].equals("%DC%"))
+		{
+			m_socket.close();
+			return "You have been disconnected";
+		}
+		
+		else if (messageComponent[1].equals("%POLL%"))
+		{
+			sendChatMessage("06|" + m_messageCounter + "|" + m_name);
+			return "";
+		}
+		
 		else 
 		{
 			//returnAck();
@@ -248,7 +260,7 @@ public class ServerConnection
 		Random generator = new Random();
 		DatagramPacket packet = pack("05" + "|" + m_messageCounter + "|" + m_name);
 
-		System.out.println("Sending on socket at port: " + m_clientSocket.getLocalPort());
+		System.out.println("Sending on socket at port: " + m_socket.getLocalPort());
 
 		// Make a number of attempts to send the message
 		//for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
@@ -262,7 +274,7 @@ public class ServerConnection
 				// Send message
 				try
 				{
-					m_clientSocket.send(packet);
+					m_socket.send(packet);
 					return;
 				} catch (IOException e)
 				{
