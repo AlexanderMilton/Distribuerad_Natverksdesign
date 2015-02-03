@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 INDEX VERSION 1.127+G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\.metadata\.plugins\org.eclipse.jdt.core
 43116916.index
 2862505046.index
@@ -15,14 +14,8 @@ INDEX VERSION 1.127+G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\.m
 411808680.index
 2639897890.index
 3516674917.index
-398808090.index
 3469357943.index
+398808090.index
 592100015.index
 2429832945.index
-=======
-INDEX VERSION 1.126+\\hsnas3\studenthome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\.metadata\.plugins\org.eclipse.jdt.core
-442916426.index
-2599522995.index
-131613456.index
->>>>>>> a81626beca20042ed076ca7ae1a5f90855661b47
 2270138345.index

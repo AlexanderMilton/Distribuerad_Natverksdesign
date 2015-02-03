@@ -54,8 +54,6 @@ public class Client implements ActionListener
 
 	private void listenForServerMessages()
 	{
-		// Use the code below once m_connection.receiveChatMessage() has been
-		// implemented properly.
 		do
 		{	
 			String message = m_connection.receiveChatMessage();
@@ -85,9 +83,6 @@ public class Client implements ActionListener
 		// Get input from GUI window
 		String input = m_GUI.getInput();
 
-		System.out.println("1) Got input, incrementing clients MC");
-		System.out.println("Input: " + input);
-
 		// Increment message counter
 //		m_connection.m_messageCounter++;
 
@@ -110,14 +105,14 @@ public class Client implements ActionListener
 			case "/whisper":
 			case "/w":
 				
-				message = "02" + "|" + 1 + "|"
+				message = "02" + "|" + m_connection.getMessageID() + "|"
 						+ m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;
 
 			// Request user list
 			case "/list":
 			case "/l":
-				message = "03" + "|" + 1 + "|"
+				message = "03" + "|" + m_connection.getMessageID() + "|"
 						+ m_name;
 				break;
 
@@ -127,7 +122,7 @@ public class Client implements ActionListener
 			case "/exit":
 			case "/dc":
 
-				message = "04" + "|" + 1 + "|"	+ m_name;
+				message = "04" + "|" + m_connection.getMessageID() + "|"	+ m_name;
 
 				break;
 
@@ -145,7 +140,7 @@ public class Client implements ActionListener
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-			String message = "00" + "|" + 1 + "|"
+			String message = "00" + "|" + m_connection.getMessageID() + "|"
 					+ m_name + "|" + input;
 			m_connection.sendChatMessage(message);
 		}

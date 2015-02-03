@@ -12,13 +12,16 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class Server
 {
 
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
+	private ArrayList<String> m_messageList = new ArrayList<String>();
 	private DatagramSocket m_socket;
 
 	public static void main(String[] args)
@@ -57,7 +60,7 @@ public class Server
 	private void listenForClientMessages()
 	{
 		// Concurrently check if all clients are still connected
-		new Thread(new pollClientStatus()).start();
+		//new Thread(new pollClientStatus()).start();
 		
 		System.out.println("Waiting for client messages... ");
 
@@ -75,12 +78,10 @@ public class Server
 				e1.printStackTrace();
 			}
 
-			System.out.println("4) Server received message");
-
 			// Unpack message
 			String message = unpack(packet);
 
-			System.out.println("Unpacked message: " + message);
+			//System.out.println("Unpacked message: " + message);
 
 			// Split message into segments containing type, message and/or arguments
 			/*
@@ -90,6 +91,7 @@ public class Server
 			 * messageComponent[3] = message/argument 
 			 * messageComponent[4] = message (if argument present)
 			 */
+			
 			String[] messageComponent = message.split("\\|");
 
 			// Read packet sender address and port
@@ -98,25 +100,18 @@ public class Server
 
 			// Read message type, message count and sender name
 			String type = messageComponent[0];
-			//int messageCounter = Integer.parseInt(messageComponent[1]);
+			String messageID = messageComponent[1];
 			String name = messageComponent[2];
 
-//			System.out.println("address: " + address);
-//			System.out.println("port: " + port);
-//			System.out.println("type: " + type);
-//			System.out.println("messageCounter: " + messageCounter);
-//			System.out.println("name: " + name);
-
-			/*// Check if message has already been interpreted
-			if (!type.equals("01") && messageAlreadyInterpreted(name, messageCounter))
+			// Check if message has already been interpreted
+			if (!type.equals("01") && messageAlreadyInterpreted(messageID))
 			{
 				System.out.println("Message already interpreted");
-				//acknowledgeMessage(name, "ACK", address, port);
+				acknowledgeMessage(name, "%ACK%", address, port);
 				continue;
 			}
-
 			// Uninterpreted, non-connection request messages are acknowledged
-			else*/ if (!type.equals("01"))
+			else if (!type.equals("01"))
 			{
 				acknowledgeMessage(name, "%ACK%", address, port);
 			}
@@ -199,7 +194,8 @@ public class Server
 		{
 			c = itr.next();
 			DatagramPacket message = pack(c.getAckCounter(), msg, c.getAddress(), c.getPort());
-			c.sendMessage(message, m_socket);
+			if(!c.sendMessage(message, m_socket))
+				disconnectClient(c.getName());
 		}
 	}
 
@@ -229,41 +225,30 @@ public class Server
 			if (c.hasName(recepient))
 			{
 				DatagramPacket message = pack(c.getAckCounter(), whisper, c.getAddress(), c.getPort());
-				c.sendMessage(message, m_socket);
+				if(!c.sendMessage(message, m_socket))
+					disconnectClient(recepient);
 			}
 		}
 	}
 
-	public boolean messageAlreadyInterpreted(String name, int clientMessageCounter)
+	public boolean messageAlreadyInterpreted(String messageID)
 	{
-		ClientConnection c;
-		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		String c;
+		for (Iterator<String> itr = m_messageList.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
-			if (c.hasName(name))
+			if (c.equals(messageID))
 			{
-//				System.out.println("clientConnection MC: " + c.getMessageCounter());
-//				System.out.println("serverConnection MC: " + clientMessageCounter);
-				if (c.getMessageCounter() <= clientMessageCounter)
-				{
-					// Message has not been interpreted
-//					c.m_messageCounter++; // = clientMessageCounter;
-					return false;
-				} else
-				{
-					// Message has already been interpreted
-					return true;
-				}
+				return true;
 			}
 		}
-		// Client not yet stored
+		// Message not already interpreted
+		m_messageList.add(messageID);
 		return false;
 	}
 
 	public void acknowledgeMessage(String name, String msg, InetAddress address, int port)
 	{
-		System.out.println("5) Message is being acknowledged by server");
-		
 		System.out.println("Acknowledging message from " + name + "...");
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
@@ -273,9 +258,47 @@ public class Server
 			{
 				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
 				c.returnAck(message, m_socket);
+				//returnAck(message, m_socket);
+				return;
 			}
 		}
 	}
+	
+//	public void returnAck(DatagramPacket message, DatagramSocket socket)
+//	{		
+//		// Randomize a failure variable
+//		Random generator = new Random();
+//		DatagramPacket packet = message;
+//
+//		System.out.println("Sending on socket at port: " + socket.getLocalPort());
+//
+//		// Make a number of attempts to send the message
+//		{
+//
+//			double failure = generator.nextDouble();
+//
+//			if (failure > TRANSMISSION_FAILURE_RATE)
+//			{
+//
+//				// Send message
+//				try
+//				{
+//					socket.send(packet);
+//					return;
+//				} catch (IOException e)
+//				{
+//					System.err.println("Error: failed to send ack to client");
+//					e.printStackTrace();
+//				}
+//
+//			} else
+//			{
+//				// Message got lost
+//			}
+//		}
+//		// Message failed to send
+//		System.err.println("Error: failed to return ack");
+//	}
 
 	public void receivedAck(String name)
 	{
@@ -285,7 +308,8 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				c.acknowledgment.countDown();
+				//c.acknowledgment.countDown();
+				Latch.ack.countDown();
 			}
 		}
 	}
@@ -311,8 +335,9 @@ public class Server
 			if (c.hasName(name))
 			{
 				sendPrivateMessage(name, "%DC%");
-				broadcast(name + " disconnected");
 				m_connectedClients.remove(c);
+				c = null;	// May be unnecessary
+				broadcast(name + " disconnected");
 				return;
 			}
 		}
@@ -323,7 +348,7 @@ public class Server
 		// Append message code and name to message, marshal packet and send it
 		// to assigned address and port
 		String message = ackCounter + "|" + msg;
-		System.out.println("Packed message: " + message);
+		//System.out.println("Packed message: " + message);
 		byte[] data = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
 
@@ -376,7 +401,7 @@ public class Server
 					try
 					{
 						System.out.println("Polling client " + currentClient);
-						if(Latch.poll.await(500, TimeUnit.MILLISECONDS))
+						if(Latch.poll.await(1000, TimeUnit.MILLISECONDS))
 							continue;
 						else
 						{
@@ -384,7 +409,7 @@ public class Server
 						}
 					} catch (InterruptedException e)
 					{
-						// TODO Auto-generated catch block
+						System.err.println("Error: failed to register poll latch release");
 						e.printStackTrace();
 					}
 				}

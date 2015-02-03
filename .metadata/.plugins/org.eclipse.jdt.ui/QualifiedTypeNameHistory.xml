@@ -9,4 +9,6 @@
 <fullyQualifiedTypeName name="java.util.concurrent.Phaser"/>
 <fullyQualifiedTypeName name="java.util.concurrent.TimeUnit"/>
 <fullyQualifiedTypeName name="java.util.ConcurrentModificationException"/>
+<fullyQualifiedTypeName name="UDPChat.Server.Latch"/>
+<fullyQualifiedTypeName name="java.util.concurrent.CyclicBarrier"/>
 </qualifiedTypeNameHistroy>
