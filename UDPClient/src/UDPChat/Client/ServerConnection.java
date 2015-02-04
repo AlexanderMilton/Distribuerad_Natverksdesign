@@ -9,10 +9,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 
@@ -29,22 +28,17 @@ public class ServerConnection
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
 	public DatagramSocket m_socket = null;
-
-	private int messageCounter = 0;
-
-//	public CountDownLatch acknowledgment;
-//	public CyclicBarrier acknowledgment;
-//	public int m_messageCounter = 0;	// Start at one to be ahead of server
-//	private int m_ackCounter = 0;
+	private int message = 0;
+	private int previousMessageID = 0;
+	private boolean isAcked = false;
+	private boolean recentlyReceived = false;
 
 	public ServerConnection(String hostName, int port, String name)
 	{
 
 		m_name = name;
 		m_serverPort = port;
-		//acknowledgment = new CountDownLatch(1);
-		//acknowledgment = new CyclicBarrier(1);
-
+		
 		// Get host address by name
 		try
 		{
@@ -59,12 +53,19 @@ public class ServerConnection
 		try
 		{
 			m_socket = new DatagramSocket();
-			// m_clientAckSocket = new DatagramSocket();
-			// m_serverSocket = new DatagramSocket(m_serverPort);
 		} catch (SocketException e)
 		{
 			e.printStackTrace();
 			System.err.println("Error: invalid port.");
+		}
+		
+		try
+		{
+			m_socket.setSoTimeout(500);
+		} catch (SocketException e1)
+		{
+			System.err.println("Error: failed to set socket timeout");
+			e1.printStackTrace();
 		}
 
 		System.out.println("m_socket port: " + m_socket.getLocalPort());
@@ -147,56 +148,27 @@ public class ServerConnection
 
 			if (failure > TRANSMISSION_FAILURE_RATE)
 			{
-
 				// Set latch to 1
-				Latch.ack = new CountDownLatch(1);
+				isAcked = false;
 
 				// Send message
 				try
 				{
 					System.out.println("Sending message: " + msg);
 					m_socket.send(packet);
-					//return;
+					//return; // TODO REMOVE RETURN
 				} catch (IOException e)
 				{
 					e.printStackTrace();
 				}
-
-				// Receive server acknowledgment
-//				try
-//				{
-//					if(acknowledgment.await(3000, TimeUnit.MILLISECONDS))
-//					{
-//						System.out.println("Received server acknowledgment message after " + i + " attempts");
-//						return;
-//					}
-//					else
-//					{
-//						System.err.println("Server acknowledgment timed out");
-//					}
-//				} catch (InterruptedException e)
-//				{
-//					System.err.println("Failed to receive server acknowledgment");
-//					e.printStackTrace();
-//				}
 				
-				try
+				while (true)
 				{
-					// Start a timer
-					if(Latch.ack.await(1000, TimeUnit.MILLISECONDS))
+					if(isAcked && recentlyReceived)
 					{
 						System.out.println("Received server acknowledgment message after " + i + " attempts");
 						return;
 					}
-					else
-					{
-						System.err.println("Server acknowledgment timed out");
-					}
-						
-				} catch (InterruptedException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 			
@@ -206,8 +178,7 @@ public class ServerConnection
 				System.err.println("Message lost on client side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
 			}
 		}
-		// Message failed to send, decrement message counter
-//		m_messageCounter--;
+		// Message failed to send
 		System.err.println("Error: failed to send message");
 	}
 
@@ -215,37 +186,56 @@ public class ServerConnection
 	{
 		byte[] buf = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
-
+		
 		try
 		{
 			m_socket.receive(packet);
+		} catch (SocketTimeoutException e1)
+		{
+			recentlyReceived = false;
+			return "";
 		} catch (IOException e)
 		{
 			System.err.println("Error: client failed to receive packet.");
 			e.printStackTrace();
 		}
 
+		recentlyReceived = true;
+
 		// Unpack and split message
 		String message = unpack(packet);
 		String[] messageComponent = message.split("\\|");
-
+		
 		System.out.println("Received message: " + message);
 		
-		if (messageComponent[1].equals("%ACK%"))// && Integer.parseInt(messageComponent[0]) >= m_ackCounter)
+		int receivedMessageID = Integer.parseInt(messageComponent[0]);
+		message = messageComponent[1];
+		
+		if (receivedMessageID <= previousMessageID)
 		{
-			System.out.println("Received ack");
-//			m_ackCounter++;
-			Latch.ack.countDown();
+			returnAck();
 			return "";
 		}
 		
-		else if (messageComponent[1].equals("%DC%"))
+		else
+		{
+			previousMessageID = receivedMessageID;			
+		}
+		
+		if (message.equals("%ACK%"))
+		{
+			System.out.println("Received ack");
+			isAcked = true;
+			return "";
+		}
+		
+		else if (message.equals("%DC%"))
 		{
 			m_socket.close();
 			return "You have been disconnected";
 		}
 		
-		else if (messageComponent[1].equals("%POLL%"))
+		else if (message.equals("%POLL%"))
 		{
 			sendChatMessage("06|" + getMessageID() + "|" + m_name);
 			return "";
@@ -265,67 +255,51 @@ public class ServerConnection
 		DatagramPacket packet = pack("05" + "|" + getMessageID() + "|" + m_name);
 
 		System.out.println("Sending on socket at port: " + m_socket.getLocalPort());
+		
 
-		// Make a number of attempts to send the message
-		//for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
+		double failure = generator.nextDouble();
+
+		if (failure > TRANSMISSION_FAILURE_RATE)
 		{
 
-			double failure = generator.nextDouble();
-			
-//			// Sleep to let client connection catch up
-//			try
-//			{
-//				Thread.sleep(50);
-//			} catch (InterruptedException e1)
-//			{
-//				System.err.println("Failed to sleep");
-//				e1.printStackTrace();
-//			}
-
-			if (failure > TRANSMISSION_FAILURE_RATE)
+			// Send message
+			try
 			{
-
-				// Send message
-				try
-				{
-					m_socket.send(packet);
-					return;
-				} catch (IOException e)
-				{
-					System.err.println("Error: failed to send ack to server");
-					e.printStackTrace();
-				}
-
-			} else
+				m_socket.send(packet);
+				return;
+			} catch (IOException e)
 			{
-				// Message got lost
-				System.out.println("Message lost on client side");
+				System.err.println("Error: failed to send ack to server");
+				e.printStackTrace();
 			}
+
+		} else
+		{
+			// Message got lost
+			System.out.println("Message lost on client side");
 		}
+		
 		// Message failed to send
 		System.err.println("Error: failed to return ack");
 	}
 	
 	public String getMessageID()
 	{
-		messageCounter++;
-		return (m_name + messageCounter);
+		message++;
+		return (m_name + message);
 	}
 
 	public DatagramPacket pack(String msg)
 	{
-		// Append message code and name to message, marshal packet and send it
-		// to assigned address and port
+		// Append message code and name to message, marshal packet and send it to assigned address and port
 		byte[] data = new byte[256];
 		data = msg.getBytes();
-		//System.out.println("Packed message: " + msg);
 		return new DatagramPacket(data, msg.length(), m_serverAddress, m_serverPort);
 	}
 
 	public String unpack(DatagramPacket packet)
 	{
 		String message = new String(packet.getData(), 0, packet.getLength());
-		//System.out.println("Unpacked packet containing: " + message);
 		return message;
 	}
 

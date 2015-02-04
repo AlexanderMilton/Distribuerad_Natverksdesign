@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="257" key="DIALOG_WIDTH"/>
+		<item value="672" key="DIALOG_Y_ORIGIN"/>
+		<item value="787" key="DIALOG_X_ORIGIN"/>
+		<item value="376" key="DIALOG_HEIGHT"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item value="false" key="isRegEx"/>
-		<item value="Packet" key="selection"/>
-		<item value="false" key="casesensitive"/>
-		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="isRegEx"/>
+		<item value="false" key="incremental"/>
 		<item value="false" key="wholeword"/>
+		<item value="Pack" key="selection"/>
 		<list key="findhistory">
+			<item value="pack"/>
+			<item value="Client &quot; +"/>
+			<item value="Client"/>
+			<item value="Counter"/>
 			<item value="packet"/>
 			<item value="acknowledgeMessage"/>
 			<item value="acknowledgment"/>
 			<item value="acknowledging"/>
-			<item value="returnAck"/>
-			<item value="messageal"/>
-			<item value="poll"/>
-			<item value="class"/>
 		</list>
 		<list key="replacehistory">
+			<item value=""/>
 			<item value="pollRes"/>
 			<item value="m_socket"/>
 			<item value="acknowledgment"/>
@@ -25,12 +33,5 @@
 			<item value="m_clientSocket"/>
 			<item value="m_serverSocket"/>
 		</list>
-	</section>
-	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
-		<item value="257" key="DIALOG_WIDTH"/>
-		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
-		<item value="376" key="DIALOG_HEIGHT"/>
-		<item value="672" key="DIALOG_Y_ORIGIN"/>
-		<item value="787" key="DIALOG_X_ORIGIN"/>
 	</section>
 </section>

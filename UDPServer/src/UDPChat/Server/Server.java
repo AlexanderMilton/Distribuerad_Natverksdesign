@@ -12,9 +12,6 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class Server
 {
@@ -23,6 +20,8 @@ public class Server
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<String> m_messageList = new ArrayList<String>();
 	private DatagramSocket m_socket;
+	private boolean receivedPoll = false;
+	private int message = 0;
 
 	public static void main(String[] args)
 	{
@@ -80,8 +79,6 @@ public class Server
 
 			// Unpack message
 			String message = unpack(packet);
-
-			//System.out.println("Unpacked message: " + message);
 
 			// Split message into segments containing type, message and/or arguments
 			/*
@@ -149,6 +146,8 @@ public class Server
 					System.err.println("Error: failed to send handshake response");
 					e.printStackTrace();
 				}
+				
+				broadcast(name + " joined the chat");
 
 				break;
 
@@ -176,32 +175,36 @@ public class Server
 				break;
 				
 			case "06": // Responding to poll
-				Latch.poll.countDown();
+				receivedPoll = true;
 				break;
 
 			default:
 				System.err.println("Error: unknown message type: " + messageComponent[0]);
 
 			}
+			
+			//disconnectClient(null);
 
 		} while (true);
 	}
 
 	public void broadcast(String msg)
 	{
+		System.out.println("Broadcasting message: " + msg);
+		
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
-			DatagramPacket message = pack(c.getAckCounter(), msg, c.getAddress(), c.getPort());
+			DatagramPacket message = pack(getMessageID(), msg, c.getAddress(), c.getPort());
 			if(!c.sendMessage(message, m_socket))
-				disconnectClient(c.getName());
+				c.markedForDeath = true;
 		}
 	}
 
 	public boolean addClient(String name, InetAddress address, int port)
 	{
-		ClientConnection c;
+		ClientConnection c = null;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
@@ -210,9 +213,7 @@ public class Server
 				return false; // Already exists a client with this name
 			}
 		}
-		broadcast(name + " joined the chat");
 		m_connectedClients.add(new ClientConnection(name, address, port));
-		System.out.println("Added client " + name + " sucessfully");
 		return true;
 	}
 
@@ -224,9 +225,9 @@ public class Server
 			c = itr.next();
 			if (c.hasName(recepient))
 			{
-				DatagramPacket message = pack(c.getAckCounter(), whisper, c.getAddress(), c.getPort());
+				DatagramPacket message = pack(getMessageID(), whisper, c.getAddress(), c.getPort());
 				if(!c.sendMessage(message, m_socket))
-					disconnectClient(recepient);
+					c.markedForDeath = true;
 			}
 		}
 	}
@@ -258,47 +259,10 @@ public class Server
 			{
 				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
 				c.returnAck(message, m_socket);
-				//returnAck(message, m_socket);
 				return;
 			}
 		}
 	}
-	
-//	public void returnAck(DatagramPacket message, DatagramSocket socket)
-//	{		
-//		// Randomize a failure variable
-//		Random generator = new Random();
-//		DatagramPacket packet = message;
-//
-//		System.out.println("Sending on socket at port: " + socket.getLocalPort());
-//
-//		// Make a number of attempts to send the message
-//		{
-//
-//			double failure = generator.nextDouble();
-//
-//			if (failure > TRANSMISSION_FAILURE_RATE)
-//			{
-//
-//				// Send message
-//				try
-//				{
-//					socket.send(packet);
-//					return;
-//				} catch (IOException e)
-//				{
-//					System.err.println("Error: failed to send ack to client");
-//					e.printStackTrace();
-//				}
-//
-//			} else
-//			{
-//				// Message got lost
-//			}
-//		}
-//		// Message failed to send
-//		System.err.println("Error: failed to return ack");
-//	}
 
 	public void receivedAck(String name)
 	{
@@ -308,8 +272,8 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				//c.acknowledgment.countDown();
-				Latch.ack.countDown();
+				System.out.println("Acking message reception to client " + name);
+				c.isAcked = true;
 			}
 		}
 	}
@@ -327,28 +291,44 @@ public class Server
 	}
 
 	public void disconnectClient(String name)
-	{
+	{	
+		if(name == null) {
+			return;
+		}
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
+			System.out.println("Client " + c.getName() + " " + c.markedForDeath);
 			if (c.hasName(name))
 			{
-				sendPrivateMessage(name, "%DC%");
+				System.out.println("BEFORE: No of clients: " + m_connectedClients.size());
+				//sendPrivateMessage(name, "%DC%"); //TODO handle DC
 				m_connectedClients.remove(c);
 				c = null;	// May be unnecessary
 				broadcast(name + " disconnected");
+				System.out.println("AFTER: No of clients: " + m_connectedClients.size());
 				return;
+			}
+			else if (c.markedForDeath)
+			{
+				System.out.println(c.getName() + " was marked for death and disconnected");
+				broadcast(c.getName() + " disconnected");
+				m_connectedClients.remove(c);
+				c = null;	// May be unnecessary
 			}
 		}
 	}
 
+	public int getMessageID()
+	{
+		return ++message;
+	}
+
 	public DatagramPacket pack(int ackCounter, String msg, InetAddress iadd, int port)
 	{
-		// Append message code and name to message, marshal packet and send it
-		// to assigned address and port
+		// Append message code and name to message, marshal packet and send it to assigned address and port
 		String message = ackCounter + "|" + msg;
-		//System.out.println("Packed message: " + message);
 		byte[] data = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(data, message.length(), iadd, port);
 
@@ -396,21 +376,26 @@ public class Server
 					
 					sendPrivateMessage(c.getName(), "%POLL%");
 
-					Latch.poll = new CountDownLatch(1);
+					receivedPoll = false;
 					
+					// Sleep between checks
 					try
 					{
-						System.out.println("Polling client " + currentClient);
-						if(Latch.poll.await(1000, TimeUnit.MILLISECONDS))
-							continue;
-						else
-						{
-							disconnectClient(currentClient);
-						}
+						Thread.sleep(50);
 					} catch (InterruptedException e)
 					{
-						System.err.println("Error: failed to register poll latch release");
+						System.err.println("Error: failed to sleep");
 						e.printStackTrace();
+					}
+					
+					if(receivedPoll)
+					{
+						System.out.println("Received client poll");
+						continue;
+					}
+					else
+					{
+						System.err.println("Client acknowledgment timed out");
 					}
 				}
 			}

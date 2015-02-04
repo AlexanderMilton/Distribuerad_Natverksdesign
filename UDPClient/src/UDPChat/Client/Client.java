@@ -2,8 +2,6 @@ package UDPChat.Client;
 
 import java.awt.event.*;
 
-//import java.io.*;
-
 public class Client implements ActionListener
 {
 
@@ -34,7 +32,7 @@ public class Client implements ActionListener
 	private Client(String userName)
 	{
 		m_name = userName;
-
+		
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
 	}
@@ -45,6 +43,7 @@ public class Client implements ActionListener
 		m_connection = new ServerConnection(hostName, port, m_name);
 		if (m_connection.handshake(m_name))
 		{
+			
 			listenForServerMessages();
 		} else
 		{
@@ -74,17 +73,13 @@ public class Client implements ActionListener
 		} while (true);
 	}
 
-	// Sole ActionListener method; acts as a callback from GUI when user hits
-	// enter in input field
+	// Sole ActionListener method; acts as a callback from GUI when user hits enter in input field
 
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
 		// Get input from GUI window
 		String input = m_GUI.getInput();
-
-		// Increment message counter
-//		m_connection.m_messageCounter++;
 
 		// Forward slash expects a command with our without argument and message
 		if (input.startsWith("/"))
@@ -105,15 +100,13 @@ public class Client implements ActionListener
 			case "/whisper":
 			case "/w":
 				
-				message = "02" + "|" + m_connection.getMessageID() + "|"
-						+ m_name + "|" + stringArray[1] + "|" + stringArray[2];
+				message = "02" + "|" + m_connection.getMessageID() + "|" + m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;
 
 			// Request user list
 			case "/list":
 			case "/l":
-				message = "03" + "|" + m_connection.getMessageID() + "|"
-						+ m_name;
+				message = "03" + "|" + m_connection.getMessageID() + "|" + m_name;
 				break;
 
 			// Request disconnect
@@ -128,7 +121,6 @@ public class Client implements ActionListener
 
 			default:
 				System.err.println("Error: invalid command");
-//				m_connection.m_messageCounter--;
 				m_GUI.clearInput();
 				return;
 			}
@@ -140,15 +132,8 @@ public class Client implements ActionListener
 		// Messages without commands are treated as broadcasts
 		else if (input.length() > 0)
 		{
-			String message = "00" + "|" + m_connection.getMessageID() + "|"
-					+ m_name + "|" + input;
+			String message = "00" + "|" + m_connection.getMessageID() + "|" + m_name + "|" + input;
 			m_connection.sendChatMessage(message);
-		}
-
-		else
-		{
-			// Decrement message counter
-//			m_connection.m_messageCounter--;
 		}
 
 		m_GUI.clearInput();

@@ -1,0 +1,44 @@
+package UDPChat.Server;
+
+public class Latch 
+{
+	private static boolean poll;
+	private static boolean ack;
+	
+	public void resetAck()
+	{
+		ack = false;
+	}
+	
+	public void resetPoll()
+	{
+		poll = false;
+	}
+	
+	public void setAck()
+	{
+		ack = false;
+	}
+	
+	public void setPoll()
+	{
+		poll = false;
+	}
+	
+	public boolean getAck()
+	{
+		return ack;
+	}
+	
+	public boolean getPoll()
+	{
+		if(poll == true)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
