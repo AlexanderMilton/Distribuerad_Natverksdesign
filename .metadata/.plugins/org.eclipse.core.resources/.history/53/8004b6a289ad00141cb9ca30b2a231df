@@ -112,11 +112,23 @@ public class ServerConnection
 		try
 		{
 			m_socket = new DatagramSocket();
+//			m_ackSocket = new DatagramSocket();
 		} catch (SocketException e)
 		{
 			e.printStackTrace();
 			System.err.println("Error: invalid port.");
 		}
+		
+//		m_ackPort = m_ackSocket.getLocalPort();
+		
+//		try
+//		{
+//			m_ackSocket.setSoTimeout(1000);
+//		} catch (SocketException e1)
+//		{
+//			System.err.println("Error: failed to set socket timeout");
+//			e1.printStackTrace();
+//		}
 
 		System.out.println("m_socket port: " + m_socket.getLocalPort());
 		System.out.println("Server address: " + m_serverAddress);
@@ -179,7 +191,7 @@ public class ServerConnection
 				System.out.println("Awaiting acknowledgment...");
 				socket.receive(acknowledgment);
 
-				// Received acknowledgment, return packet
+				// REceived acknowledgment, return packet
 				System.out.println("Received acknowledgment");
 				return acknowledgment;
 			} catch (SocketTimeoutException e)

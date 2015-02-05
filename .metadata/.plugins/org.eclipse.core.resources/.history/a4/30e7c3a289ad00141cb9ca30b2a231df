@@ -93,14 +93,14 @@ public class Client implements ActionListener
 			{
 
 			// Connect to server - OBSOLETE
-			case "/connect": case "/c": message = "01" + "|" + m_name;
-				message = "01" + "|" + m_connection.getMessageID() + "|" + m_name;
-				break;
-			 
+			/*
+			 * case "/connect": case "/c": message = "01" + "|" + m_name; break;
+			 */
 
 			// Send private message
 			case "/whisper":
 			case "/w":
+				
 				message = "02" + "|" + m_connection.getMessageID() + "|" + m_name + "|" + stringArray[1] + "|" + stringArray[2];
 				break;
 
@@ -115,7 +115,9 @@ public class Client implements ActionListener
 			case "/quit":
 			case "/exit":
 			case "/dc":
+
 				message = "04" + "|" + m_connection.getMessageID() + "|"	+ m_name;
+
 				break;
 
 			default:

@@ -61,44 +61,24 @@ public class ClientConnection
 	}
 	
 	// For initiating communication
-	public void sendMessage(String msg, int messageID, DatagramSocket socket)
+	public void sendMessage(String msg, DatagramSocket socket)
 	{
-		send(msg, messageID, socket, m_clientPort);
+		sendMessage(message, socket, m_port);
 	}
 	
 	// For sending replies to incoming communications
-	public void sendReply(String msg, int messageID, DatagramSocket socket, DatagramPacket reply)
+	public void sendReply(String msg, DatagramSocket socket, DatagramPacket reply)
 	{
-		send(msg, messageID, socket, reply.getPort());
+		sendMessage(msg, socket, reply.getPort());
 	}
 
-	private void send(String msg, int messageID, DatagramSocket socket, int port)
+	private void sendMessage(String msg, int messageID, DatagramSocket socket, int port)
 	{
 		// Randomize a failure variable
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		
 		DatagramPacket packet = pack(messageID, msg);
-		
-		if (failure > TRANSMISSION_FAILURE_RATE)
-		{
-			try
-			{
-				System.out.println("Sending message: " + msg + " with message ID: " + messageID);
-				socket.send(packet);
-			} catch (IOException e)
-			{
-				System.err.println("Error: failed to send message");
-				System.exit(1);
-			}
-		}
-		else
-		{
-			// Message lost
-			System.err.println("Message lost on server side");
-		}
-		
-	}
 		
 		
 		

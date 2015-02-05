@@ -63,16 +63,16 @@ public class ClientConnection
 	// For initiating communication
 	public void sendMessage(String msg, int messageID, DatagramSocket socket)
 	{
-		send(msg, messageID, socket, m_clientPort);
+		sendMessage(msg, messageID, socket, m_clientPort);
 	}
 	
 	// For sending replies to incoming communications
 	public void sendReply(String msg, int messageID, DatagramSocket socket, DatagramPacket reply)
 	{
-		send(msg, messageID, socket, reply.getPort());
+		sendMessage(msg, messageID, socket, reply.getPort());
 	}
 
-	private void send(String msg, int messageID, DatagramSocket socket, int port)
+	private void sendMessage(String msg, int messageID, DatagramSocket socket, int port)
 	{
 		// Randomize a failure variable
 		Random generator = new Random();

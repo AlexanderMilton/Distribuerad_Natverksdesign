@@ -17,7 +17,6 @@ public class Server
 {
 
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
-	static int MAX_SEND_ATTEMPTS = 10;
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<String> m_messageList = new ArrayList<String>();
 	private DatagramSocket m_socket;
@@ -166,29 +165,11 @@ public class Server
 			System.exit(1);
 		}
 		
-		for (int i = 0; i <= MAX_SEND_ATTEMPTS; i++)
-    	{
-
+		while (true)
+		{
 			// Send message
-			recepient.sendMessage(msg, getMessageID(), socket);
-			
-			try
-			{
-				// Await response, return message on receive
-				socket.receive(packet);
-				return unpack(packet);
-			} catch (SocketTimeoutException e)
-			{
-				System.out.println("Acknowledgment timed out, " + (MAX_SEND_ATTEMPTS - i) + (" attempts left"));
-			} catch (IOException e)
-			{
-				System.err.println("Error: failed to receive response");
-				e.printStackTrace();
-				System.exit(1);
-			}
-    	}
-		// Failed to receive response, return error
-		return new String("ERROR");
+			recepient.sendMessage(msg, socket);
+		}
 	}
 	
 	
@@ -197,29 +178,9 @@ public class Server
 		
 	}
 	
-	// Validate name and connect a new client
-	private void connect (String msg, DatagramPacket packet)
+	private void connect (String msg, DatagramPacket pkt)
 	{
-		String[] messageComponent = msg.split("\\|");
-		String name = messageComponent[1];
-		InetAddress address = packet.getAddress();
-		int port = packet.getPort();
 		
-		ClientConnection c = new ClientConnection(name, address, port);
-		
-		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-		{
-			c = itr.next();
-			if (c.hasName(name))
-			{
-				// The name is already taken by another client
-				send(c, new DatagramSocket(), "NAME");
-			}
-		}
-		m_connectedClients.add(new ClientConnection(name, address, port));
-		
-		DatagramPacket 
-		broadcast(name + " has joined the chat.", new DatagramPacket);
 	}
 	
 	private void whisper (String msg, DatagramPacket pkt)

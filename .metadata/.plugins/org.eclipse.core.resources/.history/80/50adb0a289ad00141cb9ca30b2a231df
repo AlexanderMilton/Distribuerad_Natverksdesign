@@ -197,16 +197,10 @@ public class Server
 		
 	}
 	
-	// Validate name and connect a new client
-	private void connect (String msg, DatagramPacket packet)
+	private void connect (String msg, DatagramPacket pkt)
 	{
-		String[] messageComponent = msg.split("\\|");
-		String name = messageComponent[1];
-		InetAddress address = packet.getAddress();
-		int port = packet.getPort();
-		
-		ClientConnection c = new ClientConnection(name, address, port);
-		
+		messageComponenmsg.split
+		ClientConnection c = new ClientConnection();
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
@@ -217,9 +211,7 @@ public class Server
 			}
 		}
 		m_connectedClients.add(new ClientConnection(name, address, port));
-		
-		DatagramPacket 
-		broadcast(name + " has joined the chat.", new DatagramPacket);
+		return true;
 	}
 	
 	private void whisper (String msg, DatagramPacket pkt)
