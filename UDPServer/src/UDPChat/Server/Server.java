@@ -80,6 +80,7 @@ public class Server
 			// Unpack message
 			String message = unpack(packet);
 
+			System.out.println("\nReceived message: " + message);
 			// Split message into segments containing type, message and/or arguments
 			/*
 			 * messageComponent[0] = type XX 
@@ -104,13 +105,13 @@ public class Server
 			if (!type.equals("01") && messageAlreadyInterpreted(messageID))
 			{
 				System.out.println("Message already interpreted");
-				acknowledgeMessage(name, "%ACK%", address, port);
+				acknowledgeMessage(name, address, port);
 				continue;
 			}
 			// Uninterpreted, non-connection request messages are acknowledged
 			else if (!type.equals("01"))
 			{
-				acknowledgeMessage(name, "%ACK%", address, port);
+				acknowledgeMessage(name, address, port);
 			}
 			
 			switch (type)
@@ -183,7 +184,7 @@ public class Server
 
 			}
 			
-			//disconnectClient(null);
+			disconnectClient(null);
 
 		} while (true);
 	}
@@ -196,7 +197,7 @@ public class Server
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
-			DatagramPacket message = pack(getMessageID(), msg, c.getAddress(), c.getPort());
+			DatagramPacket message = pack(getMessageID(), msg + "|" + c.m_ackSocket.getLocalPort(), c.getAddress(), c.getPort());
 			if(!c.sendMessage(message, m_socket))
 				c.markedForDeath = true;
 		}
@@ -248,7 +249,7 @@ public class Server
 		return false;
 	}
 
-	public void acknowledgeMessage(String name, String msg, InetAddress address, int port)
+	public void acknowledgeMessage(String name, InetAddress address, int port)
 	{
 		System.out.println("Acknowledging message from " + name + "...");
 		ClientConnection c;
@@ -257,8 +258,7 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				DatagramPacket message = pack(c.getAckCounter(), msg, address, port);
-				c.returnAck(message, m_socket);
+				c.returnAck();
 				return;
 			}
 		}
@@ -303,7 +303,7 @@ public class Server
 			if (c.hasName(name))
 			{
 				System.out.println("BEFORE: No of clients: " + m_connectedClients.size());
-				//sendPrivateMessage(name, "%DC%"); //TODO handle DC
+				sendPrivateMessage(name, "%DC%"); //TODO handle DC
 				m_connectedClients.remove(c);
 				c = null;	// May be unnecessary
 				broadcast(name + " disconnected");
@@ -318,6 +318,20 @@ public class Server
 				c = null;	// May be unnecessary
 			}
 		}
+	}
+	
+	public int getAckPort(String name)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(name))
+			{
+				return c.getAckPort();
+			}
+		}
+		return 0;
 	}
 
 	public int getMessageID()

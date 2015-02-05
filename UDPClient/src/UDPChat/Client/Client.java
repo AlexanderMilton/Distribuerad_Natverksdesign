@@ -47,7 +47,8 @@ public class Client implements ActionListener
 			listenForServerMessages();
 		} else
 		{
-			System.err.println("Unable to connect to server");
+			System.err.println("Error: unable to connect to server");
+			System.exit(1);
 		}
 	}
 
@@ -55,7 +56,7 @@ public class Client implements ActionListener
 	{
 		do
 		{	
-			String message = m_connection.receiveChatMessage();
+			String message = m_connection.receiveMessage();
 			
 			if(!message.isEmpty())
 				m_GUI.displayMessage(message);
@@ -125,7 +126,7 @@ public class Client implements ActionListener
 				return;
 			}
 
-			m_connection.sendChatMessage(message);
+			m_connection.sendMessage(message, m_connection.m_socket, m_connection.m_serverPort);
 
 		}
 
@@ -133,7 +134,7 @@ public class Client implements ActionListener
 		else if (input.length() > 0)
 		{
 			String message = "00" + "|" + m_connection.getMessageID() + "|" + m_name + "|" + input;
-			m_connection.sendChatMessage(message);
+			m_connection.sendMessage(message, m_connection.m_socket, m_connection.m_serverPort);
 		}
 
 		m_GUI.clearInput();

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.Random;
 
 /**
@@ -21,16 +22,42 @@ public class ClientConnection
 	static int MAX_SEND_ATTEMPTS = 10;
 
 	private final String m_name;
-	private final InetAddress m_address;
-	private final int m_port;
+	private final InetAddress m_clientAddress;
+	private final int m_clientPort;
+	public DatagramSocket m_ackSocket = null;
+	
 	public boolean isAcked = false;
 	public boolean markedForDeath = false;
 
 	public ClientConnection(String name, InetAddress address, int port)
 	{
 		m_name = name;
-		m_address = address;
-		m_port = port;
+		m_clientAddress = address;
+		m_clientPort = port;
+		
+		System.out.println("\nm_name = " + m_name);
+		System.out.println("m_clientAddress = " + m_clientAddress);
+		System.out.println("m_clientPort = " + m_clientPort);
+		
+		// Create ack socket
+		try
+		{
+			m_ackSocket = new DatagramSocket();
+		} catch (SocketException e)
+		{
+			e.printStackTrace();
+			System.err.println("Error: invalid port.");
+		}
+		
+		// Set socket timeout
+		try
+		{
+			m_ackSocket.setSoTimeout(10);
+		} catch (SocketException e)
+		{
+			System.err.println("Error: failed to set socket timeout");
+			e.printStackTrace();
+		}
 	}
 
 	public boolean sendMessage(DatagramPacket message, DatagramSocket socket)
@@ -40,57 +67,59 @@ public class ClientConnection
 
 		DatagramPacket packet = message;
 
-		System.out.println("Sending on socket at port: " + socket.getLocalPort());
+		System.out.println("CC sending msg to port: " + packet.getPort());
+		System.out.println("CC sending msg to address: " + packet.getAddress());
 
 		// Make a number of attempts to send the message
 		for (int i = 1; i <= MAX_SEND_ATTEMPTS; i++)
 		{
 			double failure = generator.nextDouble();
-
-			if (failure > TRANSMISSION_FAILURE_RATE)
+			
+			// Set latch to 1
+			isAcked = false;
+			
+			// Send message
+			try
 			{
-
-				// Set latch to 1
-				isAcked = false;
-				
-				// Send message
-				try
-				{
+				if (failure > TRANSMISSION_FAILURE_RATE)
 					socket.send(packet);
-					//return true; // TODO REMOVE RETURN
-				} catch (IOException e)
-				{
-					System.err.println("Error: failed to send message to client");
-					e.printStackTrace();
-				}
-				
-				while (true)
-				{
-					if(isAcked)
-					{
-						System.out.println("Received client acknowledgment message after " + i + " attempts");
-						return true;
-					}
-				}
-
-			} else
+				//return true; // TODO REMOVE RETURN
+			} catch (IOException e)
 			{
-				// Message got lost
-				System.out.println("Message lost on server side, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
+				System.err.println("Error: failed to send message to client");
+				e.printStackTrace();
 			}
+			
+			try
+			{
+				m_ackSocket.receive(packet);
+			} catch (IOException e)
+			{
+				System.out.println("Failed to receive ack from client");
+			}
+			
+			String ack = unpack(packet);
+			System.out.println("CC received ack: " + ack);
+			
+			if (ack.equals("%ACK%"))
+			{
+				return true;
+			}
+
 		}
 		// Message failed to send
 		System.err.println("Message never arrived, client presumed disconnected");
 		return false;
 	}
 
-	public void returnAck(DatagramPacket message, DatagramSocket socket)
+	public void returnAck()
 	{		
 		// Randomize a failure variable
 		Random generator = new Random();
-		DatagramPacket packet = message;
+		DatagramPacket packet = packAck();
 
-		System.out.println("Sending on socket at port: " + socket.getLocalPort());
+		System.out.println("CC sending ack to port: " + packet.getPort());
+		System.out.println("CC sending ack address: " + packet.getAddress());
 
 		double failure = generator.nextDouble();
 
@@ -100,7 +129,7 @@ public class ClientConnection
 			// Send message
 			try
 			{
-				socket.send(packet);
+				m_ackSocket.send(packet);
 				return;
 			} catch (IOException e)
 			{
@@ -117,6 +146,29 @@ public class ClientConnection
 		// Message failed to send
 		System.err.println("Error: failed to return ack");
 	}
+	
+	public DatagramPacket pack(int messageID, String msg)
+	{
+		String message = messageID + "|" + msg;
+		byte[] data = message.getBytes();
+		DatagramPacket packet = new DatagramPacket(data, message.length(), m_clientAddress, m_clientPort);
+
+		return packet;
+	}
+
+	public DatagramPacket packAck()
+	{
+		String msg = "%ACK%";
+		System.out.println("Packing message: " + msg);
+		byte[] data = new byte[256];
+		data = msg.getBytes();
+		return new DatagramPacket(data, msg.length(), m_clientAddress, m_clientPort);
+	}
+	
+	public String unpack(DatagramPacket packet)
+	{
+		return new String(packet.getData(), 0, packet.getLength());
+	}
 
 	public boolean hasName(String testName)
 	{
@@ -125,7 +177,7 @@ public class ClientConnection
 
 	public InetAddress getAddress()
 	{
-		return m_address;
+		return m_clientAddress;
 	}
 
 	public String getName()
@@ -135,17 +187,12 @@ public class ClientConnection
 
 	public int getPort()
 	{
-		return m_port;
+		return m_clientPort;
 	}
 
-	public int getMessageCounter()
+	public int getAckPort()
 	{
-		return 1;
-	}
-
-	public int getAckCounter()
-	{
-		return 1;
+		return m_ackSocket.getLocalPort();
 	}
 
 }
