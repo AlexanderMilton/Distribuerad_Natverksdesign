@@ -34,13 +34,12 @@ public class ServerConnection
 
 	private String m_name;
 	private int message = 0;
-	private int previousMessageID = 0;
+	private int latestMessageID = 0;
 //	private boolean isAcked = false;
 //	private boolean recentlyReceived = false;
 
-	public boolean handshake(String name)
+	public boolean connect(String name)
 	{
-		
 		// Verify valid name length
 		if (name.length() > 20)
 		{
@@ -53,43 +52,31 @@ public class ServerConnection
 			return false;
 		}
 		
-		byte[] data = new byte[256];
-		DatagramPacket handshakeResponse = new DatagramPacket(data, data.length);
 		String message = new String("01" + "|" + getMessageID() + "|" + name);
-
+		
 		// Send connection request (handshake)
 		System.out.println("Sending handshake to server...");
-		sendMessage(message, m_socket, m_serverPort);
-
-		// Receive handshake 
-		try 
-		{ 
-			System.out.println("Receiving handshake from server...");
-			m_socket.receive(handshakeResponse);
-		} catch (IOException e) {
-			System.err.println("Failed to receive packet");
-			e.printStackTrace();
-		}
-
-		message = unpack(handshakeResponse);
-		System.out.println("Unpacked handshake response: " + message);
+		String response = new String(unpack(sendMessage(message, m_socket, m_serverPort)));
+		
+		System.out.println("Unpacked handshake response: " + response);
 		
 		// Handshake successful
-		if (message.equals("OK"))
+		if (response.split("\\|")[1].equals("OK"))
 		{
 			System.out.println("Successfully connected to server\n");
+			send("%ACK%", m_socket, m_serverPort);
 			return true;
 		}
 
 		// Handshake unsuccessful, name was taken
-		else if (message.equals("NAME"))
+		else if (response.split("\\|")[1].equals("NAME"))
 		{
 			System.err.println("Error: that username is already taken");
 			m_socket.close();
 			return false;
 		}
 
-		System.err.println("Error: unknown handshake return: " + message);
+		System.err.println("Error: unknown handshake return: " + response);
 		return false;
 	}
 	
@@ -182,6 +169,7 @@ public class ServerConnection
 				// Received acknowledgment, return packet
 				System.out.println("Received acknowledgment");
 				return acknowledgment;
+				
 			} catch (SocketTimeoutException e)
 			{ 
 				// Socket timed out
@@ -196,66 +184,85 @@ public class ServerConnection
 		return acknowledgment;
 	}
 	
-	public DatagramPacket receivePacket(DatagramSocket socket)
+	public DatagramPacket receivePacket(DatagramSocket socket) throws SocketTimeoutException
 	{
 		byte[] data = new byte[256];
-		DatagramPacket message = new DatagramPacket(data, data.length);
+		data = "".getBytes();
+		DatagramPacket packet = new DatagramPacket(data, data.length);
 		
 		try
 		{
-			socket.receive(message);
+			socket.receive(packet);
+			return packet;
+		} catch (SocketTimeoutException e)
+		{
+			// Timeout
 		} catch (IOException e)
 		{
 			System.err.println("Error: failed to receive message");
 			e.printStackTrace();
 		}
-		return message;
+		return packet;
 	}
 	
 	public String receiveMessage()
 	{
+		DatagramPacket packet = null;
 		String message = null;
 		String[] messageComponent = null;
 		int receivedMessageID = 0;
 		
 		while (true)
 		{
-			// Receive and unpack a server distributed message
-			message = unpack(receivePacket(m_socket));
-			messageComponent = message.split("\\|");
-			
-			// Check the ID of the message
-			receivedMessageID = Integer.parseInt(messageComponent[0]);
-			
-			if (receivedMessageID <= previousMessageID)
+			try
 			{
-//				sendAcknowledgment();
-				return "";
-			}
-			else
-			{
-				previousMessageID = receivedMessageID;			
-			}
-			
-			if (message.equals("%ACK%"))
-			{
-				System.out.println("Received ack");
-				return "";
-			}
-			else if (message.equals("%DC%"))
-			{
-				m_socket.close();
-				return "You have been disconnected";
-			}
-//			else if (message.equals("%POLL%"))
-//			{
-//				sendChatMessage("%ACK%", m_socket);
-//				return "";
-//			}
-			else 
-			{
-//				sendAcknowledgment();
+				// Receive and unpack a server distributed message
+				packet = receivePacket(m_socket);
+				message = unpack(packet);
+				
+				System.out.println("Received message: " + message);
+				
+				switch(message)
+				{
+					case "OK": case "NAME":
+						return message;
+						
+					case "DC":
+						m_socket.close();
+						System.exit(0);
+						break;
+					case "":
+						return "";
+				}
+				
+				messageComponent = message.split("\\|");
+
+				System.out.println("received a message of component-lngt: " + messageComponent.length);
+				System.out.println(message);
+				System.out.println(messageComponent[0]);
+				System.out.println(messageComponent[1]);
+				
+				// Check the ID of the message
+				receivedMessageID = Integer.parseInt(messageComponent[0]);
+				
+				if (receivedMessageID <= latestMessageID)
+				{
+					// Acknowledge reception
+					send("%ACK%", m_socket, packet.getPort());
+					return "";
+				}
+				else
+				{
+					latestMessageID = receivedMessageID;			
+				}
+				
+				// Acknowledge reception
+				send("%ACK%", m_socket, packet.getPort());
 				return messageComponent[1];
+			
+			} catch (SocketTimeoutException e)
+			{
+				// Socket timed out
 			}
 		}
 	}

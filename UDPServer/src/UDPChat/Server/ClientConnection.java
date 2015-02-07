@@ -77,6 +77,9 @@ public class ClientConnection
 		// Randomize a failure variable
 		Random generator = new Random();
 		double failure = generator.nextDouble();
+
+		System.out.println("port: " + port);
+		System.out.println("msg: " + msg);
 		
 		DatagramPacket packet = pack(messageID, msg);
 		

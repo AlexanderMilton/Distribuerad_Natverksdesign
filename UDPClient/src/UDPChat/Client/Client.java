@@ -18,15 +18,15 @@ public class Client implements ActionListener
 			System.exit(-1);
 		}
 
-		try
-		{
+//		try
+//		{
 			Client instance = new Client(args[2]);
 			instance.connectToServer(args[0], Integer.parseInt(args[1]));
-		} catch (NumberFormatException e)
-		{
-			System.err.println("Error: port number must be an integer.");
-			System.exit(-1);
-		}
+//		} //catch (NumberFormatException e)
+//		{
+//			System.err.println("Error: port number must be an integer: " + Integer.parseInt(args[1]));
+//			System.exit(-1);
+//		}
 	}
 
 	private Client(String userName)
@@ -41,9 +41,8 @@ public class Client implements ActionListener
 	{
 		// Create a new server connection
 		m_connection = new ServerConnection(hostName, port, m_name);
-		if (m_connection.handshake(m_name))
+		if (m_connection.connect(m_name))
 		{
-			
 			listenForServerMessages();
 		} else
 		{
@@ -92,10 +91,10 @@ public class Client implements ActionListener
 			switch (stringArray[0])
 			{
 
-			// Connect to server - OBSOLETE
-			case "/connect": case "/c": message = "01" + "|" + m_name;
-				message = "01" + "|" + m_connection.getMessageID() + "|" + m_name;
-				break;
+//			// Connect to server - OBSOLETE
+//			case "/connect": case "/c": message = "01" + "|" + m_name;
+//				message = "01" + "|" + m_connection.getMessageID() + "|" + m_name;
+//				break;
 			 
 
 			// Send private message

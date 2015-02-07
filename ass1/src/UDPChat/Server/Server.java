@@ -296,39 +296,6 @@ public class Server
     	// Send disconnect ack
     	sender.sendReplyMessage("021", m_socket, packet);
 	}
-    
-    private void processPublic(String data, DatagramPacket packet)
-	{
-    	String[] msg = data.split("/", 4);
-    	if(msg.length < 4)
-    	{
-    		System.err.println("Malformed public message received.");
-    		return;
-    	}
-    	// Check token and get username
-    	ClientConnection sender = m_connectedClients.get(msg[1]);
-    	if(sender == null)
-    	{
-    		System.err.println("Invalid token received in public message.");
-    		return;
-    	}
-    	sender.updateActivityTime();
-    	
-    	try
-    	{
-			if(sender.checkSession(Integer.parseInt(msg[2])))
-			{ // Message not already received
-				sendBroadcast(sender, msg[3]);
-			}
-			// Send public message ack
-			sender.sendReplyMessage("041", m_socket, packet);
-    	}
-    	catch (NumberFormatException e) 
-    	{
-    		System.err.println("Error converting received session number.");
-    		return;
-    	}
-	}
 
     private void processPrivate(String data, DatagramPacket packet)
 	{
@@ -363,6 +330,26 @@ public class Server
 		// Send private message ack
 		sender.sendReplyMessage("051", m_socket, packet);
 	}
+    
+    private void sendPrivate(ClientConnection to, ClientConnection from, String message) 
+    {
+    	String data = "070/"+to.getToken()+"/"+to.newSession()+"/"+from.getName()+"/1/"+message;
+    	try
+    	{
+    		if(DEBUG){ System.out.println("Sending message "+data); }
+    		resendUntilReply(to, new DatagramSocket(), data);
+        	// ack received
+        	to.updateActivityTime();
+    	} 
+    	catch (SocketTimeoutException e)
+    	{ // No ack received
+    	}
+    	catch (SocketException e)
+    	{
+    		System.err.println("Error: Socket exception");
+    		if(DEBUG){ e.printStackTrace();	}
+    	}
+    }
     
     private void processList(String data, DatagramPacket packet)
 	{
@@ -405,25 +392,38 @@ public class Server
 		return null;
     }
     
-    private void sendPrivate(ClientConnection to, ClientConnection from, String message) 
-    {
-    	String data = "070/"+to.getToken()+"/"+to.newSession()+"/"+from.getName()+"/1/"+message;
+    private void processPublic(String data, DatagramPacket packet)
+	{
+    	String[] msg = data.split("/", 4);
+    	if(msg.length < 4)
+    	{
+    		System.err.println("Malformed public message received.");
+    		return;
+    	}
+    	// Check token and get username
+    	ClientConnection sender = m_connectedClients.get(msg[1]);
+    	if(sender == null)
+    	{
+    		System.err.println("Invalid token received in public message.");
+    		return;
+    	}
+    	sender.updateActivityTime();
+    	
     	try
     	{
-    		if(DEBUG){ System.out.println("Sending message "+data); }
-    		resendUntilReply(to, new DatagramSocket(), data);
-        	// ack received
-        	to.updateActivityTime();
-    	} 
-    	catch (SocketTimeoutException e)
-    	{ // No ack received
+			if(sender.checkSession(Integer.parseInt(msg[2])))
+			{ // Message not already received
+				sendBroadcast(sender, msg[3]);
+			}
+			// Send public message ack
+			sender.sendReplyMessage("041", m_socket, packet);
     	}
-    	catch (SocketException e)
+    	catch (NumberFormatException e) 
     	{
-    		System.err.println("Error: Socket exception");
-    		if(DEBUG){ e.printStackTrace();	}
+    		System.err.println("Error converting received session number.");
+    		return;
     	}
-    }
+	}
 
     private void sendBroadcast(ClientConnection from, String message) 
     {

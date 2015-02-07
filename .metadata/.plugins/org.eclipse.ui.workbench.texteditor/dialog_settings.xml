@@ -2,20 +2,20 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="" key="selection"/>
+		<item value="send(" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
-		<item value="false" key="wholeword"/>
+		<item value="true" key="wholeword"/>
 		<list key="findhistory">
+			<item value="send("/>
+			<item value="send"/>
+			<item value="connect"/>
+			<item value="OK"/>
+			<item value="port number m"/>
 			<item value="unknown"/>
 			<item value="unknown handshake return"/>
 			<item value="unknown handshake return:"/>
-			<item value="m_ackPort"/>
-			<item value="rece"/>
-			<item value="m_clientAckPort"/>
-			<item value="send"/>
-			<item value="ACK"/>
 		</list>
 		<list key="replacehistory">
 			<item value=""/>
@@ -31,7 +31,7 @@
 		<item value="257" key="DIALOG_WIDTH"/>
 		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
 		<item value="376" key="DIALOG_HEIGHT"/>
-		<item value="672" key="DIALOG_Y_ORIGIN"/>
+		<item value="664" key="DIALOG_Y_ORIGIN"/>
 		<item value="787" key="DIALOG_X_ORIGIN"/>
 	</section>
 </section>

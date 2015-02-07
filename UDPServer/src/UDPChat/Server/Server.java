@@ -18,6 +18,8 @@ public class Server
 
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
 	static int MAX_SEND_ATTEMPTS = 10;
+	static private String WELCOME = ("Welcome to the Chat Room");
+	
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<String> m_messageList = new ArrayList<String>();
 	private DatagramSocket m_socket;
@@ -82,13 +84,17 @@ public class Server
 				// Split message into segments containing type, message and/or arguments
 				/*
 				 * messageComponent[0] = type XX 
-				 * messageComponent[1] = messageCounter 
+				 * messageComponent[1] = messageID 
 				 * messageComponent[2] = name 
 				 * messageComponent[3] = message/argument 
 				 * messageComponent[4] = message (if argument present)
 				 */
 				
 				String[] messageComponent = message.split("\\|");
+
+				System.out.println("messageComponent[0]: " + messageComponent[0]);
+				System.out.println("messageComponent[1]: " + messageComponent[1]);
+				System.out.println("messageComponent[2]: " + messageComponent[2]);
 	
 				// Read packet sender address and port
 				InetAddress address = packet.getAddress();
@@ -97,46 +103,42 @@ public class Server
 				// Read message type, message count and sender name
 				String type = messageComponent[0];
 				String messageID = messageComponent[1];
-				String name = messageComponent[2];
+				String sender = messageComponent[2];
 	
-//				// Check if message has already been interpreted
-//				if (!type.equals("01") && messageAlreadyInterpreted(messageID))
-//				{
-//					System.out.println("Message already interpreted");
-//					acknowledgeMessage(name, address, port);
-//					continue;
-//				}
-//				// Uninterpreted, non-connection request messages are acknowledged
-//				else if (!type.equals("01"))
-//				{
-//					acknowledgeMessage(name, address, port);
-//				}
+				// Check if message has already been interpreted
+				if (messageAlreadyInterpreted(messageID))
+				{
+					System.out.println("Message already interpreted");
+					acknowledgeMessage("OK", sender, packet);
+					continue;
+				}
 				
 				switch (type)
 				{
 				case "00":
 					// Broadcast request
-					broadcast(message, packet);
+					broadcast(messageComponent[3], getClient(sender));
 					break;
 
 				case "01":
 					// Connection request
-					connect(message, packet);
+					connect(sender, packet);
 					break;
 
 				case "02":
 					// Whisper request
-					whisper(message, packet);
+					String recepient = messageComponent[3];
+					whisper(getClient(recepient), getClient(sender), messageComponent[4]);
 					break;
 
 				case "03":
 					// List request
-					list(message, packet);
+					list(packet, getClient(sender));
 					break;
 
 				case "04":
 					// Leave request
-					disconnect(message, packet);
+					disconnect(getClient(sender), packet);
 					break;
 				}
 			} catch (SocketTimeoutException e)
@@ -148,10 +150,12 @@ public class Server
 				e1.printStackTrace();
 				System.exit(1);
 			}
+			// Remove clients who have disconnected
+			removeDisconnectedClients();
 		} while (true);
 	}
 	
-	private String send (ClientConnection recepient, DatagramSocket socket, String msg)
+	private String send (ClientConnection recepient, DatagramSocket socket, String msg, int messageID)
 	{
 		byte[] data = new byte[256];
 		DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -170,17 +174,19 @@ public class Server
     	{
 
 			// Send message
-			recepient.sendMessage(msg, getMessageID(), socket);
+			recepient.send(msg, messageID, socket, getMessageID());
 			
 			try
 			{
 				// Await response, return message on receive
 				socket.receive(packet);
 				return unpack(packet);
-			} catch (SocketTimeoutException e)
+			}
+			catch (SocketTimeoutException e)
 			{
 				System.out.println("Acknowledgment timed out, " + (MAX_SEND_ATTEMPTS - i) + (" attempts left"));
-			} catch (IOException e)
+			} 
+			catch (IOException e)
 			{
 				System.err.println("Error: failed to receive response");
 				e.printStackTrace();
@@ -192,53 +198,215 @@ public class Server
 	}
 	
 	
-	private void broadcast (String msg, DatagramPacket pkt)
+	private void broadcast (String msg, ClientConnection sender)
 	{
-		
+		String message = new String(sender.getName() + ": " + msg);
+		System.out.println("Broadcasting message: " + message);
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			try
+			{
+				// Send on a fresh socket
+				send(c, new DatagramSocket(), message, getMessageID());
+			} catch (SocketException e)
+			{
+				System.err.println("Error: socket exception");
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	// Validate name and connect a new client
-	private void connect (String msg, DatagramPacket packet)
+	private void connect (String sender, DatagramPacket packet)
+	{		
+		ClientConnection newClient = new ClientConnection(sender, packet.getAddress(), packet.getPort());
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(sender))
+			{
+				// The name is already taken by another client
+				acknowledgeMessage("NAME", sender, packet);
+				
+				// Client response acquired
+				return;
+			}
+		}
+		m_connectedClients.add(newClient);
+		
+		// Send acknowledgment
+		acknowledgeMessage("OK", sender, packet);
+	}
+	
+	private void whisper (ClientConnection recepient, ClientConnection sender, String msg)
 	{
-		String[] messageComponent = msg.split("\\|");
-		String name = messageComponent[1];
-		InetAddress address = packet.getAddress();
-		int port = packet.getPort();
+		String message = new String(sender.getName() + " whispers: " + msg);
+
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c == recepient)
+			{
+				try
+				{
+					send(c, new DatagramSocket(), message, getMessageID());
+				} catch (SocketException e)
+				{
+					System.err.println("Error: socket exception");
+					return;
+				}
+				// Client response acquired
+				return;
+			}
+			else
+			{
+				// Recepient not found
+				tell(sender, "User not found");
+			}
+		}
+	}
+	
+	private String tell (ClientConnection recepient, String msg)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c == recepient)
+			{
+				try
+				{
+					return send(recepient, new DatagramSocket(), msg, getMessageID());
+				} catch (SocketException e)
+				{
+					System.err.println("Error: socket exception");
+					e.printStackTrace();
+				}
+			}
+		}
+		// Client not found
+		System.err.println("Recepient not found");
+		return "ERROR";
+	}
+	
+	private void list (DatagramPacket pkt, ClientConnection sender)
+	{
+		// List all active clients
+		ClientConnection c;
+		String list = new String("[List of connected clients]");
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			list += ("\n> " + c.getName());
+		}
+		tell(sender, list);
+	}
+	
+	private void disconnect (ClientConnection sender, DatagramPacket pkt)
+	{		
+		if(sender.getName() == null) {
+			return;
+		}
 		
-		ClientConnection c = new ClientConnection(name, address, port);
-		
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(sender.getName()))
+			{
+				// Send disconnect instruction to client
+				tell(sender, "%DC%");
+				
+				// Mark client as dead to remove
+				c.markedForDeath = true;
+				
+				System.out.println("Client " + c.getName() + " " + c.markedForDeath);
+			}
+		}
+	}
+	
+	private void removeDisconnectedClients()
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.markedForDeath)
+			{
+				System.out.println(c.getName() + " was marked for death and disconnected");
+				announce(c.getName() + " disconnected");
+				m_connectedClients.remove(c);
+				c = null;
+			}
+		}
+	}
+	
+	private void announce (String msg)
+	{
+		System.out.println("Announcing message: " + msg);
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			try
+			{
+				// Send on a fresh socket
+				send(c, new DatagramSocket(), msg, getMessageID());
+			} catch (SocketException e)
+			{
+				System.err.println("Error: socket exception");
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public boolean messageAlreadyInterpreted(String messageID)
+	{
+		String c;
+		for (Iterator<String> itr = m_messageList.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.equals(messageID))
+			{
+				return true;
+			}
+		}
+		// Message not already interpreted
+		m_messageList.add(messageID);
+		return false;
+	}
+	
+	public void acknowledgeMessage(String msg, String name, DatagramPacket packet)
+	{
+		System.out.println("Acknowledging message from " + name + "...");
+		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				// The name is already taken by another client
-				send(c, new DatagramSocket(), "NAME");
+				c.sendReply(msg, getMessageID(), m_socket, packet);
 			}
 		}
-		m_connectedClients.add(new ClientConnection(name, address, port));
-		
-		DatagramPacket 
-		broadcast(name + " has joined the chat.", new DatagramPacket);
 	}
 	
-	private void whisper (String msg, DatagramPacket pkt)
+	private ClientConnection getClient(String username)
 	{
-		
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(username))
+			{
+				return c;
+			}
+		}
+		return null;
 	}
-	
-	private void list (String msg, DatagramPacket pkt)
-	{
-		
-	}
-	
-	private void disconnect (String msg, DatagramPacket pkt)
-	{
-		
-	}
-	
-	
-
 
 	public String unpack (DatagramPacket packet)
 	{
