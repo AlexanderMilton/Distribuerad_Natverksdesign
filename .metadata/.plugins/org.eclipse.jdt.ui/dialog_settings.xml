@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCP" key="org.eclipse.jdt.ui.last.external.project"/>
+	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCP\Shared\TCPChat\Shared" key="org.eclipse.jdt.ui.lastextjar"/>
+	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\jsontest" key="org.eclipse.jdt.ui.last.external.project"/>
 	<section name="RefactoringWizard.preview">
 		<item value="600" key="width"/>
 		<item value="400" key="height"/>
@@ -36,7 +37,16 @@
 		<item value="false" key="linkWithEditor"/>
 		<item value="1" key="rootMode"/>
 	</section>
+	<section name="ClasspathContainerSelectionPage">
+		<item value="3" key="index"/>
+	</section>
 	<section name="quick_assist_proposal_size">
+	</section>
+	<section name="NewPackageWizardPage">
+		<item value="false" key="create_package_info_java"/>
+	</section>
+	<section name="BuildPathsPropertyPage">
+		<item value="2" key="pageIndex"/>
 	</section>
 	<section name="completion_proposal_size">
 	</section>

@@ -1,12 +1,16 @@
 package TCPChat.Client;
 
 import java.awt.event.*;
+import java.util.Arrays;
+import java.util.Vector;
+
+import TCPChat.Shared.ChatMessage;
 
 //import java.io.*;
 
 public class Client implements ActionListener
 {
-
+	static String DELIMIT = "|";
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
@@ -41,8 +45,9 @@ public class Client implements ActionListener
 	private void connectToServer(String hostName, int port)
 	{
 		// Create a new server connection
+		// TODO: Move connection to the connect command
 		m_connection = new ServerConnection(hostName, port);
-		if (m_connection.handshake(m_name))
+		if (m_connection.connect(m_name))
 		{
 			listenForServerMessages();
 		} else
@@ -69,6 +74,70 @@ public class Client implements ActionListener
 		// field,
 		// the text in the chat input field can now be sent to the server.
 		
+		// Get input from GUI window
+		String input = m_GUI.getInput();
+		
+		if (input.isEmpty())
+			return;
+		
+		String type = new String();
+		String message = new String();
+		
+		ChatMessage msg;
+		
+		if (input.startsWith("/"))
+		{
+			//Input is a command
+			String command = new String(input.split(" ")[0]);
+		
+			// TODO: define type token
+			switch(command)
+			{	
+			case "/connect":
+			case "/c":
+				type = "01";
+				String hostname = input.split(" ")[1];
+				message = type + DELIMIT + m_name;
+				
+				msg = new ChatMessage(m_name, type, null, null);
+				m_connection.connect(hostname);
+				
+			case "/disconnect":
+			case "/q":
+				type = "02";
+				m_connection.disconnect();
+				
+			case "/whisper":
+			case "/w":
+				type = "03";
+				String recepient = input.split(" ")[1];
+				String text = input.split(" ", 2)[2];
+				
+//				message = type + DELIMIT + recepient + DELIMIT + message;
+				
+				msg = new ChatMessage(m_name, type, recepient, text);
+				m_connection.whisper(msg);
+				
+			case "/list":
+			case "/l":
+				type = "04";
+						
+				msg = new ChatMessage(m_name, type, null, null);
+				
+				// TODO: Create extra command
+			case "/extra":
+			case "/x":
+				type = "05";
+				
+				msg = new ChatMessage(m_name, type, null, null);
+			}
+		}
+		else 
+		{
+			// Type is broadcast
+			type = "00";
+			
+		}
 		
 		m_connection.sendChatMessage(m_GUI.getInput());
 		m_GUI.clearInput();

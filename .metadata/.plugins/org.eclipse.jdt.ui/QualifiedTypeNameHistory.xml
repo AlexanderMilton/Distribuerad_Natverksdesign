@@ -11,4 +11,11 @@
 <fullyQualifiedTypeName name="UDPChat.Server.Latch"/>
 <fullyQualifiedTypeName name="java.util.concurrent.CyclicBarrier"/>
 <fullyQualifiedTypeName name="java.net.SocketTimeoutException"/>
+<fullyQualifiedTypeName name="java.util.Arrays"/>
+<fullyQualifiedTypeName name="TCPChat.Shared.ChatMessage"/>
+<fullyQualifiedTypeName name="java.net.Socket"/>
+<fullyQualifiedTypeName name="java.net.SocketAddress"/>
+<fullyQualifiedTypeName name="java.io.BufferedReader"/>
+<fullyQualifiedTypeName name="java.io.InputStreamReader"/>
+<fullyQualifiedTypeName name="java.io.BufferedWriter"/>
 </qualifiedTypeNameHistroy>
