@@ -61,36 +61,6 @@ public class ServerConnection
 		// * return false if connection failed (e.g., if user name was taken)
 		return true;
 	}
-	
-	public void disconnect()
-	{
-		pack();
-	}
-	
-	public void list()
-	{
-		pack();
-	}
-	
-	public void help()	// DOes this go in the client?
-	{
-		pack();
-	}
-	
-	public void whisper()
-	{
-		pack();
-	}
-	
-	public void broadcast()
-	{
-		pack();
-	}
-	
-	public void aux()	// Determine what this does
-	{
-		pack();
-	}
 
 	public void sendChatMessage(String message)
 	{
