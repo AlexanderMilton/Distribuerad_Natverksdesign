@@ -18,7 +18,8 @@ import java.util.Iterator;
 
 import TCPChat.Shared.ChatMessage;
 
-public class Server {
+public class Server
+{
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ServerSocket m_serverSocket;
@@ -26,21 +27,26 @@ public class Server {
 	private PrintWriter m_writer;
 	private BufferedReader m_reader;
 
-	public static void main(String[] args) {
-		if (args.length < 1) {
+	public static void main(String[] args)
+	{
+		if (args.length < 1)
+		{
 			System.err.println("Usage: java Server portnumber");
 			System.exit(-1);
 		}
-		try {
+		try
+		{
 			Server instance = new Server(Integer.parseInt(args[0]));
-			instance.listenForClientMessages();
-		} catch (NumberFormatException e) {
+			instance.addClients();
+		} catch (NumberFormatException e)
+		{
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
 		}
 	}
 
-	private Server(int portNumber) {
+	private Server(int portNumber)
+	{
 		try
 		{
 			m_port = portNumber;
@@ -52,68 +58,75 @@ public class Server {
 		}
 	}
 
-	private void listenForClientMessages() {
-		do {
+	private void addClients()
+	{
+		while (true)
+		{
+			// Wait for a new client to connect to the server
 			Socket clientSocket = new Socket();
+			ChatMessage clientMessage = null;
 			
 			try
 			{
 				System.out.println("Waiting to accept new client connection...");
 				clientSocket = m_serverSocket.accept();
 				System.out.println("Accepted client connection");
-				
+
 				m_writer = new PrintWriter(clientSocket.getOutputStream(), true);
 				m_reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-				
+
 				System.out.println("Reading from client socket buffer");
-				ChatMessage clientMessage = new ChatMessage(m_reader.readLine());
+				clientMessage = new ChatMessage(m_reader.readLine());
 			} catch (IOException e)
 			{
 				System.err.println("Error: failed to accept client socket");
 				e.printStackTrace();
 			}
 			
-			m_writer.println(new ChatMessage("Server", "Ack", "Something", "Hey Joe").getString());
+			ClientConnection c;
+			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+			{
+				c = itr.next();
+				if (c.hasName(clientMessage.getSender()))
+				{
+					// There already exists a client with this name
+					m_writer.println(new ChatMessage("Server", "Response", "0", "NAME").getString());
+					break;
+				}
+			}
 			
-			// TODO: Listen for client messages.
-			// On reception of message, do the following:
-			// * Unmarshal message
-			// * Depending on message type, either
-			// - Try to create a new ClientConnection using addClient(), send
-			// response message to client detailing whether it was successful
-			// - Broadcast the message to all connected users using broadcast()
-			// - Send a private message to a user using sendPrivateMessage()
-		} while (true);
-	}
-
-	public boolean addClient(String name, InetAddress address, int port) {
-		ClientConnection c;
-		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr
-				.hasNext();) {
-			c = itr.next();
-			if (c.hasName(name)) {
-				return false; // Already exists a client with this name
-			}
+			// Add the client
+			System.out.println("Responding with acknowledgment to client");
+			m_connectedClients.add(new ClientConnection(clientMessage.getSender(), clientSocket));
+			m_writer.println(new ChatMessage("Server", "Response", "0", "OK").getString());
 		}
-		m_connectedClients.add(new ClientConnection(name, address, port));
-		return true;
 	}
 
-	public void sendPrivateMessage(String message, String name) {
+	private void listenForClientMessages()
+	{
+		while (true)
+		{
+			
+		}
+	}
+	public void sendPrivateMessage(String message, String name)
+	{
 		ClientConnection c;
-		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr
-				.hasNext();) {
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
 			c = itr.next();
-			if (c.hasName(name)) {
-//				c.sendMessage(message, m_socket);
+			if (c.hasName(name))
+			{
+				// c.sendMessage(message, m_socket);
 			}
 		}
 	}
 
-	public void broadcast(String message) {
-		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr
-				.hasNext();) {
-//			itr.next().sendMessage(message, m_socket);
+	public void broadcast(String message)
+	{
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			// itr.next().sendMessage(message, m_socket);
 		}
 	}
 }

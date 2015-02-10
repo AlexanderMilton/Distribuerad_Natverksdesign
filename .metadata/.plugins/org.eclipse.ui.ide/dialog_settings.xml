@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-	<section name="ChooseWorkspaceDialogSettings">
-		<item value="341" key="DIALOG_Y_ORIGIN"/>
-		<item value="658" key="DIALOG_X_ORIGIN"/>
+	<section name="CleanDialogSettings">
+		<item value="500" key="DIALOG_WIDTH"/>
+		<item value="false" key="TOGGLE_SELECTED"/>
+		<item value="378" key="DIALOG_HEIGHT"/>
+		<item value="268" key="DIALOG_Y_ORIGIN"/>
+		<item value="710" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="ExternalProjectImportWizard">
+		<item value="false" key="WizardProjectsImportPage.STORE_NESTED_PROJECTS"/>
+		<item value="false" key="WizardProjectsImportPage.STORE_COPY_PROJECT_ID"/>
+		<item value="false" key="WizardProjectsImportPage.STORE_ARCHIVE_SELECTED"/>
+		<list key="WizardProjectsImportPage.STORE_DIRECTORIES">
+			<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCPChat"/>
+		</list>
+		<list key="WizardProjectsImportPage.STORE_ARCHIVES">
+			<item value=""/>
+		</list>
 	</section>
 	<section name="WORKBENCH_SETTINGS">
 		<list key="ENABLED_TRANSFERS">
 		</list>
-	</section>
-	<section name="SaveAsDialogSettings">
-		<item value="525" key="DIALOG_WIDTH"/>
-		<item value="141" key="DIALOG_Y_ORIGIN"/>
-		<item value="1272" key="DIALOG_X_ORIGIN"/>
-		<item value="580" key="DIALOG_HEIGHT"/>
-		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
 	</section>
 	<section name="NewWizardAction">
 		<item value="org.eclipse.jdt.ui.wizards.JavaProjectWizard" key="NewWizardSelectionPage.STORE_SELECTED_ID"/>
@@ -21,11 +28,15 @@
 			<item value="org.eclipse.jdt.ui.java"/>
 		</list>
 	</section>
-	<section name="CleanDialogSettings">
-		<item value="500" key="DIALOG_WIDTH"/>
-		<item value="268" key="DIALOG_Y_ORIGIN"/>
-		<item value="710" key="DIALOG_X_ORIGIN"/>
-		<item value="378" key="DIALOG_HEIGHT"/>
-		<item value="false" key="TOGGLE_SELECTED"/>
+	<section name="ChooseWorkspaceDialogSettings">
+		<item value="341" key="DIALOG_Y_ORIGIN"/>
+		<item value="658" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="SaveAsDialogSettings">
+		<item value="525" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="580" key="DIALOG_HEIGHT"/>
+		<item value="141" key="DIALOG_Y_ORIGIN"/>
+		<item value="1272" key="DIALOG_X_ORIGIN"/>
 	</section>
 </section>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-	<classpathentry kind="src" path="TCPClient/src"/>
-	<classpathentry kind="src" path="TCPServer/src"/>
-	<classpathentry kind="src" path="Shared"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="G:/Library - Documents/GitHub/Distribuerad_Natverksdesign/TCP/Shared/TCPChat/Shared/json-simple-1.1.jar"/>
-	<classpathentry kind="output" path="bin"/>
-</classpath>

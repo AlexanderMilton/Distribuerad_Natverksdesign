@@ -12,7 +12,6 @@
 <fullyQualifiedTypeName name="java.util.concurrent.CyclicBarrier"/>
 <fullyQualifiedTypeName name="java.net.SocketTimeoutException"/>
 <fullyQualifiedTypeName name="java.util.Arrays"/>
-<fullyQualifiedTypeName name="java.net.Socket"/>
 <fullyQualifiedTypeName name="java.net.SocketAddress"/>
 <fullyQualifiedTypeName name="java.io.BufferedWriter"/>
 <fullyQualifiedTypeName name="java.io.DataOutputStream"/>
@@ -21,4 +20,6 @@
 <fullyQualifiedTypeName name="java.io.InputStreamReader"/>
 <fullyQualifiedTypeName name="TCPChat.Shared.ChatMessage"/>
 <fullyQualifiedTypeName name="org.json.simple.parser.JSONParser"/>
+<fullyQualifiedTypeName name="java.net.Socket"/>
+<fullyQualifiedTypeName name="TCPChat.Server.ClientConnection"/>
 </qualifiedTypeNameHistroy>

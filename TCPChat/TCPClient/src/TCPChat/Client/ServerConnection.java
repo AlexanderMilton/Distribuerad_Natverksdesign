@@ -5,22 +5,12 @@
 package TCPChat.Client;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Vector;
 
 import TCPChat.Shared.ChatMessage;
 
@@ -34,6 +24,7 @@ public class ServerConnection
 	// Artificial failure rate of 30% packet loss
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
 
+	private String m_name = null;
 	private Socket m_socket = null;
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
@@ -41,9 +32,10 @@ public class ServerConnection
 	private BufferedReader m_reader;
 	private PrintWriter m_writer;
 
-	public ServerConnection(String hostName, int port)
+	public ServerConnection(String hostName, int port, String name)
 	{
-		
+		m_name = name;
+
 		try
 		{
 			m_serverPort = port;
@@ -69,114 +61,102 @@ public class ServerConnection
 
 	}
 
-	public boolean connect(String name)
+	public boolean connect(String name) throws IOException
 	{
-		String received = null;
-		ChatMessage sendThis = new ChatMessage("Peter Sjöberg", "Datorgrafik", "Föreläsning", "Göttigt värre");
+		// Send connection request
+		ChatMessage sendThis = new ChatMessage(m_name, "connect", "0", "0");
+		m_writer.println(sendThis.getString());
 		System.out.println("Sending ChatMessage: " + sendThis.getString());
-		
-		// Test sleeping
-		//try	{ Thread.sleep(1000); } catch(InterruptedException e) {}
-		
-		
+
+		// Receive response		
+		String received = m_reader.readLine();
+		String response = new ChatMessage(received).getMessage();
+
+		if (response.equals("OK"))
+		{
+			// Connection approved
+			System.out.println("Connection approved by server");
+			return true;
+		}
+		else if (response.equals("NAME"))
+		{
+			// Name already taken
+			System.err.println("Error: that name is already taken by another user");
+			return false;
+		}
+		else
+		{
+			// Unknown response
+			System.err.println("Error: unknown connection response: " + response);
+			System.exit(1);
+			return false;
+		}
+	}
+
+	/*
+	 * String sender String command String parameters String message
+	 */
+
+	// DISCONNECT
+	public void disconnect()
+	{
+		ChatMessage message = new ChatMessage(m_name, "disconnect", "", "");
+		System.out.println("Sending disconnect request");
+		m_writer.println(message.getString());
+	}
+
+	// LIST
+	public void list()
+	{
+		ChatMessage message = new ChatMessage(m_name, "list", "", "");
+		System.out.println("Sending user list request");
+		m_writer.println(message.getString());
+	}
+
+	// HELP
+	public void help() // TODO: Does this go in the client or through the
+						// server?
+	{
+		ChatMessage message = new ChatMessage(m_name, "help", "", "");
+		System.out.println("Sending help request");
+		m_writer.println(message.getString());
+	}
+
+	// WHISPER
+	public void whisper(String recepient, String msg)
+	{
+		ChatMessage message = new ChatMessage(m_name, "whisper", recepient, msg);
+		System.out.println("Send whisper to " + recepient);
+		m_writer.println(message.getString());
+	}
+	
+	// BROADCAST
+	public void broadcast(String msg)
+	{
+		ChatMessage message = new ChatMessage(m_name, "broadcast", "", msg);
+		System.out.println("Send broadcast");
+		m_writer.println(message.getString());
+	}
+
+	// EMOTE
+	public void emote(String msg) // Determine what this does
+	{
+		ChatMessage message = new ChatMessage(m_name, "emote", "", msg);
+		m_writer.println(message.getString());
+	}
+
+	public String receiveChatMessage()
+	{
+		String message = "";
 		try
 		{
-			m_writer.println(sendThis.getString());
-			System.out.println("Sent");
-			received = m_reader.readLine();
+			System.out.println("Receiving message...");
+			message = m_reader.readLine();
 		} catch (IOException e)
 		{
 			System.err.println("Error: failed to read from Buffered Reader");
 			e.printStackTrace();
 		}
-		
-		System.out.println("Received " + received);
-		
-		// TODO:
-		// * marshal connection message containing user name
-		// * send message via socket
-		// * receive response message from server
-		// * unmarshal response message to determine whether connection was
-		// successful
-		// * return false if connection failed (e.g., if user name was taken)
-		
-		
-		return false;
-	}
-
-	public void disconnect()
-	{
-		// pack();
-	}
-
-	public void list()
-	{
-		// pack();
-	}
-
-	public void help() // TODO: Does this go in the client or through the server?
-	{
-		// pack();
-	}
-
-	public void whisper(String recepient, String message)
-	{
-		// pack();
-	}
-
-	public void broadcast(String message)
-	{
-		// pack();
-	}
-
-	public void emote(String message) // Determine what this does
-	{
-		// pack();
-	}
-
-	public void sendChatMessage(String message)
-	{
-		Random generator = new Random();
-		double failure = generator.nextDouble();
-
-		if (failure > TRANSMISSION_FAILURE_RATE)
-		{
-			// TODO:
-			// * marshal message if necessary
-			// * send a chat message to the server
-		} else
-		{
-			// Message got lost
-		}
-	}
-
-	public String receiveChatMessage()
-	{
-		// TODO:
-		// * receive message from server
-		// * unmarshal message if necessary
-
-		// Note that the main thread can block on receive here without
-		// problems, since the GUI runs in a separate thread
-
-		// Update to return message contents
-		return "";
-	}
-
-	private DatagramPacket pack(String message)
-	{
-		byte[] data = new byte[256];
-		data = message.getBytes();
-
-		System.out.println("Packing message: " + message);
-		return new DatagramPacket(data, message.length(), m_serverAddress, m_serverPort);
-	}
-
-	private String unpack(DatagramPacket packet)
-	{
-		String message = new String(packet.getData(), 0, packet.getLength());
-
-		System.out.println("Unpacked message: " + message);
 		return message;
 	}
 }

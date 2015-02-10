@@ -6,40 +6,50 @@ package TCPChat.Server;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.util.Random;
 
 /**
  * 
  * @author brom
  */
-public class ClientConnection {
-	
+public class ClientConnection
+{
+
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
-	
+
 	private final String m_name;
-	private final InetAddress m_address;
-	private final int m_port;
+	private final Socket m_socket;
 
-	public ClientConnection(String name, InetAddress address, int port) {
+	public ClientConnection(String name, Socket socket)
+	{
 		m_name = name;
-		m_address = address;
-		m_port = port;
+		m_socket = socket;
 	}
 
-	public void sendMessage(String message, DatagramSocket socket) {
-		
+	public void sendMessage(String message, DatagramSocket socket)
+	{
+
 		Random generator = new Random();
-    	double failure = generator.nextDouble();
-    	
-    	if (failure > TRANSMISSION_FAILURE_RATE){
-    		// TODO: send a message to this client using socket.
-    	} else {
-    		// Message got lost
-    	}
-		
+		double failure = generator.nextDouble();
+
+		if (failure > TRANSMISSION_FAILURE_RATE)
+		{
+			// TODO: send a message to this client using socket.
+		} else
+		{
+			// Message got lost
+		}
+
 	}
 
-	public boolean hasName(String testName) {
+	public Socket getSocket()
+	{
+		return m_socket;
+	}
+
+	public boolean hasName(String testName)
+	{
 		return testName.equals(m_name);
 	}
 
