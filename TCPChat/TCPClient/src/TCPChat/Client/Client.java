@@ -1,12 +1,6 @@
 package TCPChat.Client;
 
 import java.awt.event.*;
-import java.util.Arrays;
-import java.util.Vector;
-
-import TCPChat.Shared.ChatMessage;
-
-//import java.io.*;
 
 public class Client implements ActionListener
 {
@@ -80,10 +74,7 @@ public class Client implements ActionListener
 		if (input.isEmpty())
 			return;
 		
-		String type = new String();
 		String message = new String();
-		
-		ChatMessage msg;
 		
 		if (input.startsWith("/"))
 		{
@@ -95,47 +86,44 @@ public class Client implements ActionListener
 			{	
 			case "/connect":
 			case "/c":
-				type = "01";
 				String hostname = input.split(" ")[1];
-				message = type + DELIMIT + m_name;
-				
-				msg = new ChatMessage(m_name, type, null, null);
+//				msg = new ChatMessage(m_name, type, null, null);
 				m_connection.connect(hostname);
+				break;
 				
 			case "/disconnect":
 			case "/q":
-				type = "02";
 				m_connection.disconnect();
+				break;
 				
 			case "/whisper":
 			case "/w":
-				type = "03";
 				String recepient = input.split(" ")[1];
-				String text = input.split(" ", 2)[2];
-				
-//				message = type + DELIMIT + recepient + DELIMIT + message;
-				
-				msg = new ChatMessage(m_name, type, recepient, text);
-				m_connection.whisper(msg);
+				message = input.split(" ", 2)[2];
+				m_connection.whisper(recepient, message);
+				break;
 				
 			case "/list":
 			case "/l":
-				type = "04";
-						
-				msg = new ChatMessage(m_name, type, null, null);
+				m_connection.list();
+				break;
 				
 				// TODO: Create extra command
-			case "/extra":
-			case "/x":
-				type = "05";
+			case "/emote":
+			case "/e":
+				message = input.split(" ")[1];
+				m_connection.emote(message);
+				break;
 				
-				msg = new ChatMessage(m_name, type, null, null);
+			default:
+				break;
 			}
 		}
 		else 
 		{
 			// Type is broadcast
-			type = "00";
+			message = input;
+			m_connection.broadcast(message);
 			
 		}
 		

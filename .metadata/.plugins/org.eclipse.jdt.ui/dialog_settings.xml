@@ -2,6 +2,8 @@
 <section name="Workbench">
 	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCP\Shared\TCPChat\Shared" key="org.eclipse.jdt.ui.lastextjar"/>
 	<item value="P:\GitHub\Distribuerad_Natverksdesign\TCP" key="org.eclipse.jdt.ui.last.external.project"/>
+	<section name="OptionalMessageDialog.hide.">
+	</section>
 	<section name="org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart">
 		<item value="true" key="group_libraries"/>
 		<item value="false" key="linkWithEditor"/>
@@ -16,35 +18,36 @@
 	<section name="BuildPathsPropertyPage">
 		<item value="2" key="pageIndex"/>
 	</section>
+	<section name="RefactoringWizard.preview">
+		<item value="400" key="height"/>
+		<item value="600" key="width"/>
+	</section>
 	<section name="FatJarPackageWizard">
-		<item value="UDPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
-		<item value="Server - UDPServer" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="\\hsnas3\StudentHome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\TCPChat\TCPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="TCPServer - TCPChat" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
 		<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
+			<item value="\\hsnas3\StudentHome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\TCPChat\TCPServer\Server.jar"/>
+			<item value="\\hsnas3\StudentHome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\TCP\TCPServer\Server.jar"/>
 			<item value="UDPServer\Server.jar"/>
 			<item value="UDPClient\Client.jar"/>
 			<item value="UDPClient/Client.jar"/>
-			<item value="UDPServer/Server.jar"/>
 		</list>
 		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
 			<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml"/>
 			<item value=".xml"/>
 		</list>
 	</section>
-	<section name="RefactoringWizard.preview">
-		<item value="400" key="height"/>
-		<item value="600" key="width"/>
-	</section>
-	<section name="quick_assist_proposal_size">
-	</section>
 	<section name="org.eclipse.ltk.ui.refactoring.settings">
-		<item value="*" key="patterns"/>
 		<item value="false" key="updateQualifiedNames"/>
+		<item value="*" key="patterns"/>
 		<item value="1" key="updateSimilarElementsMatchStrategy"/>
 		<item value="false" key="updateTextualMatches"/>
 		<item value="false" key="updateSimilarElements"/>
+	</section>
+	<section name="quick_assist_proposal_size">
 	</section>
 	<section name="ClasspathContainerSelectionPage">
 		<item value="3" key="index"/>

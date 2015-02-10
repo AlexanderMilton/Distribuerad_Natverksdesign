@@ -1,5 +1,7 @@
 package TCPChat.Shared;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class ChatMessage{
 		
@@ -11,6 +13,18 @@ public class ChatMessage{
 		obj.put("parameters", parameters);
 		obj.put("timestamp", System.currentTimeMillis());
 		obj.put("message", message);
+	}
+	
+	public ChatMessage(String JSONstring){
+		JSONParser parser = new JSONParser();
+		try
+		{
+			obj = (JSONObject)parser.parse(JSONstring);
+		} catch (ParseException e)
+		{
+			System.err.println("Error: parse exception");
+			e.printStackTrace();
+		}
 	}
 
 	public String getSender(){

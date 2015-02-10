@@ -49,7 +49,7 @@ public class ServerConnection
 			m_serverPort = port;
 			m_serverAddress = InetAddress.getByName(hostName);
 			m_socket = new Socket(m_serverAddress, m_serverPort);
-			m_writer = new PrintWriter(m_socket.getOutputStream());
+			m_writer = new PrintWriter(m_socket.getOutputStream(), true);
 			m_reader = new BufferedReader(new InputStreamReader(m_socket.getInputStream()));
 		} catch (UnknownHostException e)
 		{
@@ -71,26 +71,26 @@ public class ServerConnection
 
 	public boolean connect(String name)
 	{
-			
-		String received = new String();
+		String received = null;
+		ChatMessage sendThis = new ChatMessage("Peter Sjöberg", "Datorgrafik", "Föreläsning", "Göttigt värre");
+		System.out.println("Sending ChatMessage: " + sendThis.getString());
 		
-		ChatMessage cm = new ChatMessage("Peter Sjöberg", "Datorgrafik", "Examination", "Ser det där rätt ut?");
-		System.out.println(cm.getString());
+		// Test sleeping
+		//try	{ Thread.sleep(1000); } catch(InterruptedException e) {}
 		
 		
-		
-		
-		System.out.println("Received " + received);
-		
-		try 
+		try
 		{
-			m_socket.close();
+			m_writer.println(sendThis.getString());
+			System.out.println("Sent");
+			received = m_reader.readLine();
 		} catch (IOException e)
 		{
-			System.err.println("Error: IOException closing socket");
+			System.err.println("Error: failed to read from Buffered Reader");
 			e.printStackTrace();
-			System.exit(1);
 		}
+		
+		System.out.println("Received " + received);
 		
 		// TODO:
 		// * marshal connection message containing user name
@@ -114,23 +114,22 @@ public class ServerConnection
 		// pack();
 	}
 
-	public void help() // TODO: Does this go in the client or throught the
-						// server?
+	public void help() // TODO: Does this go in the client or through the server?
 	{
 		// pack();
 	}
 
-	public void whisper(ChatMessage msg)
+	public void whisper(String recepient, String message)
 	{
 		// pack();
 	}
 
-	public void broadcast()
+	public void broadcast(String message)
 	{
 		// pack();
 	}
 
-	public void aux() // Determine what this does
+	public void emote(String message) // Determine what this does
 	{
 		// pack();
 	}

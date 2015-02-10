@@ -1,8 +1,0 @@
-package UDPChat.Server;
-
-import java.util.concurrent.CountDownLatch;
-
-public class CDLatch 
-{
-	public static CountDownLatch poll = new CountDownLatch(0);
-}

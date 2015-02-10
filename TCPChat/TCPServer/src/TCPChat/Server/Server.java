@@ -7,16 +7,24 @@ package TCPChat.Server;
 // Maintained by Marcus Brohede
 //
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.*;
 //import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import TCPChat.Shared.ChatMessage;
+
 public class Server {
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
-	private ServerSocket m_socket;
+	private ServerSocket m_serverSocket;
+	private int m_port = -1;
+	private PrintWriter m_writer;
+	private BufferedReader m_reader;
 
 	public static void main(String[] args) {
 		if (args.length < 1) {
@@ -33,11 +41,10 @@ public class Server {
 	}
 
 	private Server(int portNumber) {
-		// TODO: create a socket, attach it to port based on portNumber, and
-		// assign it to m_socket
 		try
 		{
-			m_socket = new ServerSocket(portNumber);
+			m_port = portNumber;
+			m_serverSocket = new ServerSocket(m_port);
 		} catch (IOException e)
 		{
 			// TODO Auto-generated catch block
@@ -46,9 +53,28 @@ public class Server {
 	}
 
 	private void listenForClientMessages() {
-		System.out.println("Waiting for client messages... ");
-
 		do {
+			Socket clientSocket = new Socket();
+			
+			try
+			{
+				System.out.println("Waiting to accept new client connection...");
+				clientSocket = m_serverSocket.accept();
+				System.out.println("Accepted client connection");
+				
+				m_writer = new PrintWriter(clientSocket.getOutputStream(), true);
+				m_reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+				
+				System.out.println("Reading from client socket buffer");
+				ChatMessage clientMessage = new ChatMessage(m_reader.readLine());
+			} catch (IOException e)
+			{
+				System.err.println("Error: failed to accept client socket");
+				e.printStackTrace();
+			}
+			
+			m_writer.println(new ChatMessage("Server", "Ack", "Something", "Hey Joe").getString());
+			
 			// TODO: Listen for client messages.
 			// On reception of message, do the following:
 			// * Unmarshal message
