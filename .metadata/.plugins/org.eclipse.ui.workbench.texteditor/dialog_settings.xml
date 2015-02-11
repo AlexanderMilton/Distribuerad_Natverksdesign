@@ -8,14 +8,14 @@
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
+			<item value="font"/>
+			<item value="hasname"/>
 			<item value="Joe"/>
 			<item value="ChatMessage"/>
 			<item value="joe"/>
 			<item value="send("/>
 			<item value="send"/>
 			<item value="connect"/>
-			<item value="OK"/>
-			<item value="port number m"/>
 		</list>
 		<list key="replacehistory">
 			<item value=""/>

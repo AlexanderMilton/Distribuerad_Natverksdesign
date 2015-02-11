@@ -86,9 +86,8 @@ public class Client implements ActionListener
 		if (input.startsWith("/"))
 		{
 			// Input is a command
-			String command = new String(input.split(" ")[0]);
+			String command = new String(input.split(" ")[0].trim().toLowerCase());
 
-			// TODO: define type token
 			switch (command)
 			{
 			case "/connect":
@@ -107,14 +106,14 @@ public class Client implements ActionListener
 				break;
 
 			case "/disconnect":
-			case "/q":
+			case "/dc":
 				m_connection.disconnect();
 				break;
 
 			case "/whisper":
 			case "/w":
 				String recepient = input.split(" ")[1];
-				message = input.split(" ", 2)[2];
+				message = input.split(" ", 3)[2];
 				m_connection.whisper(recepient, message);
 				break;
 
@@ -123,11 +122,13 @@ public class Client implements ActionListener
 				m_connection.list();
 				break;
 
-			// TODO: Create extra command
-			case "/emote":
-			case "/e":
-				message = input.split(" ")[1];
-				m_connection.emote(message);
+			case "/help":
+			case "/h":
+				m_connection.help();
+				break;
+
+			case "/cat":
+				m_connection.cat();
 				break;
 
 			default:

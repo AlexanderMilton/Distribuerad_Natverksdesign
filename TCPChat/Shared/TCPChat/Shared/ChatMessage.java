@@ -7,10 +7,10 @@ public class ChatMessage{
 		
 	private JSONObject obj = new JSONObject();
 		
-	public ChatMessage(String sender, String command, String parameters, String message){
+	public ChatMessage(String sender, String command, String parameter, String message){
 		obj.put("sender", sender);
 		obj.put("command", command);
-		obj.put("parameters", parameters);
+		obj.put("parameter", parameter);
 		obj.put("timestamp", System.currentTimeMillis());
 		obj.put("message", message);
 	}
@@ -35,8 +35,8 @@ public class ChatMessage{
 		return (String)obj.get("command");	
 	}
 	
-	public String getParameters(){
-		return (String)obj.get("parameters");	
+	public String getParameter(){
+		return (String)obj.get("parameter");	
 	}
 	
 	public String getTimeStamp(){

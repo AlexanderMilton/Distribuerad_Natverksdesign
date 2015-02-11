@@ -1,0 +1,78 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package TCPChat.Server;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+/**
+ * 
+ * @author brom
+ */
+public class ClientConnection
+{
+
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
+
+	private final String m_name;
+	private final Socket m_socket;
+	private boolean markedForDeath;
+	private PrintWriter m_writer;
+
+	public ClientConnection(String name, Socket socket)
+	{
+		m_name = name;
+		m_socket = socket;
+		markedForDeath = false;
+		
+		try
+		{
+			m_writer = new PrintWriter(m_socket.getOutputStream(), true);
+		} catch (IOException e)
+		{
+			System.out.println("Error: IO exception creating client  connection printwriter");
+			e.printStackTrace();
+		}
+	}
+
+	public void sendMessage(String message)
+	{
+		m_writer.println(message);
+	}
+
+	public Socket getSocket()
+	{
+		return m_socket;
+	}
+
+	// Close the connection socket
+	public void closeSocket()
+	{
+		try
+		{
+			m_socket.close();
+		} catch (IOException e)
+		{
+			System.err.println("Error: failed to close client connection socket");
+			e.printStackTrace();
+		}
+	}
+
+	// Test the name for a match (regardless of case and spaces)
+	public boolean hasName(String name)
+	{
+		String testName = name.trim().toLowerCase();
+		return testName.equals(m_name.trim().toLowerCase());
+	}
+
+	// Mark connection as ready for deletion
+	public void markForDeath()
+	{
+		markedForDeath = true;
+		closeSocket();	// TODO: revise this option
+	}
+
+}

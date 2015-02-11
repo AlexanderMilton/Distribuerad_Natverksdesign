@@ -1,0 +1,52 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package TCPChat.Server;
+
+import java.net.Socket;
+import java.util.Random;
+
+/**
+ * 
+ * @author brom
+ */
+public class ClientConnection
+{
+
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
+
+	private final String m_name;
+	private final Socket m_socket;
+	private boolean markedForDeath;
+
+	public ClientConnection(String name, Socket socket)
+	{
+		m_name = name;
+		m_socket = socket;
+		markedForDeath = false;
+	}
+
+	public void sendMessage(String message)
+	{
+
+	}
+
+	public Socket getSocket()
+	{
+		return m_socket;
+	}
+
+	public boolean hasName(String name)
+	{
+		// Test the name for a match (regardless of case and spaces)
+		String testName = name.trim().toLowerCase();
+		return testName.equals(m_name.trim().toLowerCase());
+	}
+
+	public void markForDeath()
+	{
+		markedForDeath = true;
+	}
+
+}

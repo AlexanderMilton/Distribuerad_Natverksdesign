@@ -7,8 +7,10 @@ package TCPChat.Client;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -41,6 +43,7 @@ public class ChatGUI extends JFrame implements ActionListener{
 	m_chatOutput.setEditable(false);
 	m_chatOutput.setBackground(Color.BLACK);
 	m_chatOutput.setForeground(Color.GREEN);
+	m_chatOutput.setFont(new Font("Consolas", Font.PLAIN, 12));
 
 	Container pane = getContentPane();
 	pane.add(m_chatOutput, BorderLayout.NORTH);

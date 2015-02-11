@@ -114,8 +114,7 @@ public class ServerConnection
 	}
 
 	// HELP
-	public void help() // TODO: Does this go in the client or through the
-						// server?
+	public void help() // TODO: Does this go in the client or through the server?
 	{
 		ChatMessage message = new ChatMessage(m_name, "help", "", "");
 		System.out.println("Sending help request");
@@ -138,10 +137,10 @@ public class ServerConnection
 		m_writer.println(message.getString());
 	}
 
-	// EMOTE
-	public void emote(String msg) // Determine what this does
+	// CAT
+	public void cat() 
 	{
-		ChatMessage message = new ChatMessage(m_name, "emote", "", msg);
+		ChatMessage message = new ChatMessage(m_name, "cat", "", "");
 		m_writer.println(message.getString());
 	}
 
