@@ -7,6 +7,7 @@ public class ChatMessage{
 		
 	private JSONObject obj = new JSONObject();
 		
+	@SuppressWarnings("unchecked")
 	public ChatMessage(String sender, String command, String parameter, String message){
 		obj.put("sender", sender);
 		obj.put("command", command);

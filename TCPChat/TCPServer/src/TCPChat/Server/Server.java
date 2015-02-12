@@ -1,12 +1,5 @@
 package TCPChat.Server;
 
-//
-// Source file for the server side. 
-//
-// Created by Sanny Syberfeldt
-// Maintained by Marcus Brohede
-//
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +14,7 @@ import TCPChat.Shared.ChatMessage;
 
 public class Server
 {
-	private static String HELP_STRING = "[Help and commands]\n> Type a message to broadcast it to all users\n> Type /help or /h to show this message\n> Type /list or /l to view a list of all active users\n> Type /whisper or /w followed by a username and a message to send a private message to that user\n> Type /cat and squint for some awesome ASCII art\n> Type /disconnect or /dc to leave the chat";
+	private static String HELP_STRING = "[Help and commands]\n> Type a message to broadcast it to all users\n> Type /help or /h to show this message\n> Type /list or /l to view a list of all active users\n> Type /whisper or /w followed by a username and a message (delimited by spaces) to send a private message to that user\n> Type /cat and squint for some awesome ASCII art\n> Type /disconnect or /dc to leave the chat";
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ServerSocket m_serverSocket;
 	private int m_port = -1;
@@ -39,6 +32,7 @@ public class Server
 		}
 		try
 		{
+			@SuppressWarnings("unused")
 			Server instance = new Server(Integer.parseInt(args[0]));
 		} catch (NumberFormatException e)
 		{
@@ -56,17 +50,20 @@ public class Server
 	{
 		m_port = portNumber;
 		m_serverSocket = new ServerSocket(m_port);
-
-		criticalSection.drainPermits();
-		secondBeat.drainPermits();
 		
+		System.out.println("Server successfully started at port " + m_port);
+
+		secondBeat.drainPermits();
+
 		Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
-		Thread heartbeat = new Thread(new HeartbeatThread());
-		
+		Thread heartbeatHandler = new Thread(new HeartbeatThread());
+		Thread cartHandler = new Thread(new BringOutYerDeadThread());
+
 		clientHandler.start();
 		messageHandler.start();
-		heartbeat.start();
+		heartbeatHandler.start();
+		cartHandler.start();
 	}
 
 	// Thread concurrently accepts incoming client connections
@@ -75,34 +72,17 @@ public class Server
 		@Override
 		public void run()
 		{
-			boolean doubleBreak = false;
-			
 			while (true)
 			{
-				// Release any held criticalSections
-				criticalSection.release();
-				
-				// Sleep between checks
-				try
-				{
-					Thread.sleep(1000);
-					criticalSection.acquire();
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to sleep");
-					e.printStackTrace();
-				}
-				
 				// Wait for a new client to connect to the server
-				Socket clientSocket = new Socket();
+				Socket clientSocket = null;
 				ChatMessage clientMessage = null;
-				doubleBreak = false;
-				
+
 				try
 				{
 					// Accept client socket
 					clientSocket = m_serverSocket.accept();
-					System.out.println("Accepted client connection");
+					System.out.println("Received client connection request");
 
 					// Open streams to the socket
 					m_writer = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -110,37 +90,52 @@ public class Server
 
 					// Parse the request
 					clientMessage = new ChatMessage(m_reader.readLine());
-					
-					// Check for name availability
-					ClientConnection c;
-					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-					{
-						c = itr.next();
-						if (c.hasName(clientMessage.getSender()))
-						{
-							// There already exists a client with this name
-							System.out.println("Name already exists, denying request and closing socket");
-							m_writer.println(new ChatMessage("Server", "Response", "0", "NAME").getString());
-							clientSocket.close();
-							doubleBreak = true;
-							break;
-						}
-					}
+
+					addClient(clientSocket, clientMessage);
+
 				} catch (IOException e)
 				{
 					System.err.println("Error: failed to open and accept client socket");
 					e.printStackTrace();
 				}
-				
-				if (doubleBreak)
-					break;
-				
+			}
+		}
+
+		private void addClient(Socket socket, ChatMessage chatMessage) throws IOException
+		{
+			while (true)
+			{
+				try
+				{
+					criticalSection.acquire();
+				} catch (InterruptedException e)
+				{
+					continue;
+				}
+
+				// Check for name availability
+				ClientConnection c;
+				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+				{
+					c = itr.next();
+					if (c.hasName(chatMessage.getSender()))
+					{
+						// There already exists a client with this name
+						System.out.println("Name already exists, denying request and closing socket");
+						m_writer.println(new ChatMessage("Server", "Response", "0", "NAME").getString());
+						socket.close();
+						criticalSection.release();
+						return;
+					}
+				}
+
 				// Add the client
 				System.out.println("Responding with acknowledgment to client");
-				m_connectedClients.add(new ClientConnection(clientMessage.getSender(), clientSocket));
+				m_connectedClients.add(new ClientConnection(chatMessage.getSender(), socket));
 				m_writer.println(new ChatMessage("Server", "Response", "0", "OK").getString());
-				sendPublicMessage(clientMessage.getSender() + " joined the chat");
-				
+				sendPublicMessage(chatMessage.getSender() + " joined the chat");
+				criticalSection.release();
+				return;
 			}
 		}
 	}
@@ -150,38 +145,47 @@ public class Server
 	{
 		@Override
 		public void run()
-		{	
+		{
 			while (true)
 			{
 				try
 				{
-					// Renew criticalSection
-					criticalSection.release();
 					criticalSection.acquire();
+
+					ClientConnection c;
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+
+						// Skip disconnected clients
+						if (c.isDisconnected())
+							continue;
+
+						// String newString = null;
+						try
+						{
+							
+							while (c.getReader().ready())
+							{
+								handleMessage(new ChatMessage(c.getReader().readLine()));
+							}
+						} catch (SocketException e)
+						{
+							System.err.println("Client " + c.getName() + " disconnected");
+							disconnect(c.getName());
+						} catch (IOException e)
+						{
+							System.err.println("Client " + c.getName() + " disconnected");
+							disconnect(c.getName());
+						}
+					}
+
+					criticalSection.release();
+
 				} catch (InterruptedException e)
 				{
 					System.err.println("Error: failed to acquire criticalSection");
 					e.printStackTrace();
-				}
-				
-				ClientConnection c;
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-				{
-					c = itr.next();
-					
-					// Skip crashed clients
-					if (c.isCrashed())
-						continue;
-					
-					try
-					{
-						// Read messages from clients, parse them and forward to the message handler
-						handleMessage(new ChatMessage(new BufferedReader(new InputStreamReader(c.getSocket().getInputStream())).readLine()));
-					} catch (IOException e)
-					{
-						System.err.println("Client " + c.getName() + " crashed");
-						c.markAsCrashed();
-					}
 				}
 			}
 		}
@@ -195,14 +199,13 @@ public class Server
 		{			
 			while (true)
 			{
-				// Release any held criticalSections
-//				criticalSection.release();
+				// Drain all available permits
+				secondBeat.drainPermits();
 				
 				// Heartbeat every few seconds
 				try
 				{
-					Thread.sleep(10000);
-//					criticalSection.acquire();
+					Thread.sleep(5000);
 				} catch (InterruptedException e)
 				{
 					System.err.println("Error: failed to sleep");
@@ -216,24 +219,26 @@ public class Server
 				{
 					c = itr.next();
 
-					// Skip crashed clients
-					if (c.isCrashed() || c.isDisconnected())
+					// Skip already disconnected clients
+					if (c.isDisconnected())
 						continue;
-					
-					
-					// Send heartbeat and wait
-					m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
 					
 					try
 					{
 						// Send heartbeat and wait
-						m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
-						secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS);
+						c.sendHeartbeat();
+						
+						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
+						{
+							// No heartbeat received
+							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
+							disconnect(c.getName());
+							continue;
+						}
 					} catch (InterruptedException e)
 					{
-						// No heartbeat received
-						System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-						disconnect(c.getName());
+						System.err.println("Error: heart skipped a beat");
+						e.printStackTrace();
 						continue;
 					}
 
@@ -243,15 +248,71 @@ public class Server
 			}
 		}
 	}
-	
+
+	// Remove disconnected clients
+	public class BringOutYerDeadThread implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			while (true)
+			{
+				try
+				{
+					// Sleep for a few seconds
+					Thread.sleep(1000);
+
+					// Skip if empty
+					if (m_connectedClients.isEmpty())
+						continue;
+
+					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
+					ClientConnection c;
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						if (c.isDisconnected())
+						{
+							deadClients.add(c);
+						}
+					}
+
+					// Skip if empty
+					if (deadClients.isEmpty())
+						continue;
+
+					// Lock critical section
+					criticalSection.acquire();
+
+					// Remove clients
+					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						String name = c.getName();
+						m_connectedClients.remove(c);
+						sendPublicMessage(name + " disconnected");
+					}
+
+					// Release critical section
+					criticalSection.release();
+
+				} catch (InterruptedException e)
+				{
+					System.err.println("Error: disconnection handler thread interrupted");
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 	private void handleMessage(ChatMessage message)
 	{
-		switch(message.getCommand())
+		switch (message.getCommand())
 		{
 		case "broadcast":
 			broadcast(message.getSender(), message.getMessage());
 			break;
-			
+
 		case "disconnect":
 			disconnect(message.getSender());
 			break;
@@ -293,13 +354,12 @@ public class Server
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
-			if(c.hasName(sender))
+			if (c.hasName(sender))
 			{
 				sendPrivateMessage(sender, "You have been disconnected");
 				c.markAsDisconnected();
 			}
 		}
-		sendPublicMessage(sender + " disconnected");
 	}
 
 	private void whisper(String recepient, String sender, String message)
@@ -324,7 +384,9 @@ public class Server
 
 	private void cat(String sender)
 	{
-		sendPrivateMessage(sender, "\n=~======================~~~=========,,,,,,:~~====++++????????????????????++=::~= \n=~==================================,,,,,::~~~===++++???????????????????+++=~~~~ \n=~===========~======================,,.,,::~~~~===+++???????????????????+++=~~~~ \n=~==============+==================~,.,,,::~~~~====+++?????????????????++++=~~~= \n=~========+=====+?=================~..,,::~~~=======+++++????+???????+?++++==:~~ \n=~========+=====+?=================:..,,:~~~~========+++++++??++++++++++++++=:~~ \n=========~+=====+++============:,,:=..,,:~~~~=~~~~~~========+++++++++========:== \n=========++=====++?==========:.,:::~..,::~::~~~::,,,,:::~~~======~~:::::~~~==~== \n========+++==++=++?++======~..,::~::..,:~::::::::::,,,,:::~===~~::::::::~~~~=~== \n========++++=+???????+?+==,.,:~=~=~:,,,~~::::,:::,,,,,,,,:=+??=::,,,,,,,::~~=:~= \n~=======??+I?????+=~~..:II++~~~~~=~,,,,~~~~:,,.:,...,..,,~+????:,,,..,,,:::~=~== \n~=======+??II??+~:,.,..=77?+++==~~,:,,:~~===~~~~~==~:::,~=+??I?~,,:,,,::~=~===== \n~=====+?IIIII?+:,,,,.:~I77I??++==~::,.:~~=====~:~~~:~~====+??I?++:::~=====+++=== \n======??IIII?+=,,..~=?I777IIII?+==::,~~~~==++????+++++====+?II?+++??++++????+=== \n======+????I??7~:.:.??I77I??II??+,:::::~~==++??????+++===++?II?+++??????????+=== \n======+++?????I7?=~,III77?+::=I?,.,,~,:~~==+++++?+++~~~=++??II??+=++????????+=== \n=======+????+?II77IIII77II~.:=I?:..~~::~~~====++++=~~=+==+???II??+~=++?+?++++=== \n=====+==++++==+?II77??I77I?I?7I?=..,~:~~~~~~~~===~~=~==~~=++????+=+~===++++===== \n======+=====++=+IIII7++????77I?+:.....:~~::::~:::::::,::,,::~~~::~~~::~~~~~~~=== \n=======+++====+?????II~~:II??++=......:~~::::::::::~:,,,,,,,,,,,,~~~:,,:::::~=== \n========++~?+=~==+++=~~=+??I=++,......,~~~:::::::::::,,,,,,,,,,,:~~~::,,:::~~=== \n================~~~:::::==+++==.,......:~~~~~~~::,.,,,,,,,,,,,::~~:::::::~~~==== \n==========+==~=~=~~~~~=~~=~====..,.....::~~~:~===~~~~::,,,,,,,:~~~~:~~~~~~~~==== \n==============~~~~~~~~~~===++=.,:.,.....:::~~~~=~==~~~~~~::::~=======~~~~~~===== \n===++========~~~~~~~~~~==++++=........,.,:::~~~~~~~~~~~~~~::~===~===~~:~::====== \n==+++++===+======~=~===+++++++,..,.....,,,::::~~~~~~~~~~~~~~~~~~===~=~:::======= \n=++++?+++++==========++?+????+~.....,...,,,:::~~~~~~~~~~~~~~=~======~::~======== \n==+++?++++++++==+++++????????+==,.......,,,,:::~~~~~======++++=====~~:========== \n+++++?+???+++++?++???????I???++~,....,,,,,,,,::~~~~~~~~===+++++++==~~=========== \n+++++????????+++???????IIII???++,....,,,,,,,,,,:~~~~~~~====++++++=~~============ \n++++????????????????????II?????+=:....,,,,,,,,,,::~~~~~~~~~===++==~============= \n+==++??????++??????????????II?+=:.....,,,,,,,,,,,,:::::::::~~===~=============== \n==++++????????????????????????+~,,....,,,,,,,,,,,,,,,:::::::::::=======~======== \n===++?+????+++++????++++++++++~,.....,,,,,,,,,,,,,,,,,,,::::::::~==========++=== \n===++++++++++++++++++++++++===~,.....,::,,,,,,,,,,,,,,,,:::::::::=============== \n==~~==+++++++=~======+++++=,,,,.....,:::,,,,,,,,,,,,,,,::::::::~:==~============ \n+++??+=~~=====????????????+:,.......:::::,,,,,,,,,,,,,,,:::::::~~~~~...,======== \n+?IIIII?~:,~IIIIIIIII???++=:,....:.~.,:::::,,,,,,,,:,,:::::::::~~~~=~=.......=== \nIIIIIII?=,?IIIIIIIIII??+=~.......+.....~:::::,,,,,,,,,,,:::::::~~~~====~,......= \nIIIIIIIIIIIIIIIIIII??+=:,...............,~:::,,,,,,,,,,::::::::~~~==~====~...... \nIIIIIIIIIIIIIIIIII??=......................=~:,,,,,,,,,:::::::::~====~===~:..... \nIIIII?IIIIIIIIIII?=:,.......................~~~:,:::,,,:::::::~~~=~======~~~.... \nIIIII????I?IIIII?:,........................~.~~~~:::::,::::~~~=~=======+===~,... \nIII?+??I+II????+:............................~~=~::::::::~~~~=~==============... \nI?+=,,+?????+I+,...........................:,~~==~:~::::~~~==========+=======...");
+		sendPrivateMessage(
+				sender,
+				"\n=~======================~~~=========,,,,,,:~~====++++????????????????????++=::~= \n=~==================================,,,,,::~~~===++++???????????????????+++=~~~~ \n=~===========~======================,,.,,::~~~~===+++???????????????????+++=~~~~ \n=~==============+==================~,.,,,::~~~~====+++?????????????????++++=~~~= \n=~========+=====+?=================~..,,::~~~=======+++++????+???????+?++++==:~~ \n=~========+=====+?=================:..,,:~~~~========+++++++??++++++++++++++=:~~ \n=========~+=====+++============:,,:=..,,:~~~~=~~~~~~========+++++++++========:== \n=========++=====++?==========:.,:::~..,::~::~~~::,,,,:::~~~======~~:::::~~~==~== \n========+++==++=++?++======~..,::~::..,:~::::::::::,,,,:::~===~~::::::::~~~~=~== \n========++++=+???????+?+==,.,:~=~=~:,,,~~::::,:::,,,,,,,,:=+??=::,,,,,,,::~~=:~= \n~=======??+I?????+=~~..:II++~~~~~=~,,,,~~~~:,,.:,...,..,,~+????:,,,..,,,:::~=~== \n~=======+??II??+~:,.,..=77?+++==~~,:,,:~~===~~~~~==~:::,~=+??I?~,,:,,,::~=~===== \n~=====+?IIIII?+:,,,,.:~I77I??++==~::,.:~~=====~:~~~:~~====+??I?++:::~=====+++=== \n======??IIII?+=,,..~=?I777IIII?+==::,~~~~==++????+++++====+?II?+++??++++????+=== \n======+????I??7~:.:.??I77I??II??+,:::::~~==++??????+++===++?II?+++??????????+=== \n======+++?????I7?=~,III77?+::=I?,.,,~,:~~==+++++?+++~~~=++??II??+=++????????+=== \n=======+????+?II77IIII77II~.:=I?:..~~::~~~====++++=~~=+==+???II??+~=++?+?++++=== \n=====+==++++==+?II77??I77I?I?7I?=..,~:~~~~~~~~===~~=~==~~=++????+=+~===++++===== \n======+=====++=+IIII7++????77I?+:.....:~~::::~:::::::,::,,::~~~::~~~::~~~~~~~=== \n=======+++====+?????II~~:II??++=......:~~::::::::::~:,,,,,,,,,,,,~~~:,,:::::~=== \n========++~?+=~==+++=~~=+??I=++,......,~~~:::::::::::,,,,,,,,,,,:~~~::,,:::~~=== \n================~~~:::::==+++==.,......:~~~~~~~::,.,,,,,,,,,,,::~~:::::::~~~==== \n==========+==~=~=~~~~~=~~=~====..,.....::~~~:~===~~~~::,,,,,,,:~~~~:~~~~~~~~==== \n==============~~~~~~~~~~===++=.,:.,.....:::~~~~=~==~~~~~~::::~=======~~~~~~===== \n===++========~~~~~~~~~~==++++=........,.,:::~~~~~~~~~~~~~~::~===~===~~:~::====== \n==+++++===+======~=~===+++++++,..,.....,,,::::~~~~~~~~~~~~~~~~~~===~=~:::======= \n=++++?+++++==========++?+????+~.....,...,,,:::~~~~~~~~~~~~~~=~======~::~======== \n==+++?++++++++==+++++????????+==,.......,,,,:::~~~~~======++++=====~~:========== \n+++++?+???+++++?++???????I???++~,....,,,,,,,,::~~~~~~~~===+++++++==~~=========== \n+++++????????+++???????IIII???++,....,,,,,,,,,,:~~~~~~~====++++++=~~============ \n++++????????????????????II?????+=:....,,,,,,,,,,::~~~~~~~~~===++==~============= \n+==++??????++??????????????II?+=:.....,,,,,,,,,,,,:::::::::~~===~=============== \n==++++????????????????????????+~,,....,,,,,,,,,,,,,,,:::::::::::=======~======== \n===++?+????+++++????++++++++++~,.....,,,,,,,,,,,,,,,,,,,::::::::~==========++=== \n===++++++++++++++++++++++++===~,.....,::,,,,,,,,,,,,,,,,:::::::::=============== \n==~~==+++++++=~======+++++=,,,,.....,:::,,,,,,,,,,,,,,,::::::::~:==~============ \n+++??+=~~=====????????????+:,.......:::::,,,,,,,,,,,,,,,:::::::~~~~~...,======== \n+?IIIII?~:,~IIIIIIIII???++=:,....:.~.,:::::,,,,,,,,:,,:::::::::~~~~=~=.......=== \nIIIIIII?=,?IIIIIIIIII??+=~.......+.....~:::::,,,,,,,,,,,:::::::~~~~====~,......= \nIIIIIIIIIIIIIIIIIII??+=:,...............,~:::,,,,,,,,,,::::::::~~~==~====~...... \nIIIIIIIIIIIIIIIIII??=......................=~:,,,,,,,,,:::::::::~====~===~:..... \nIIIII?IIIIIIIIIII?=:,.......................~~~:,:::,,,:::::::~~~=~======~~~.... \nIIIII????I?IIIII?:,........................~.~~~~:::::,::::~~~=~=======+===~,... \nIII?+??I+II????+:............................~~=~::::::::~~~~=~==============... \nI?+=,,+?????+I+,...........................:,~~==~:~::::~~~==========+=======...");
 	}
 
 	private void sendPublicMessage(String message)
@@ -338,7 +400,7 @@ public class Server
 	}
 
 	private void sendPrivateMessage(String recepient, String message)
-	{	
+	{
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{

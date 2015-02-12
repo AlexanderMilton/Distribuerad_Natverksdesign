@@ -39,8 +39,6 @@ public class Client implements ActionListener
 
 	private void connectToServer(String hostName, int port)
 	{
-		// Create a new server connection
-		// TODO: Move connection to the connect command
 		m_connection = new ServerConnection(hostName, port, m_name);
 		try
 		{
@@ -68,14 +66,11 @@ public class Client implements ActionListener
 		} while (true);
 	}
 
-	// Sole ActionListener method; acts as a callback from GUI when user hits
-	// enter in input field
+	// Sole ActionListener method; acts as a callback from GUI when user hits enter in input field
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		// Since the only possible event is a carriage return in the text input
-		// field,
-		// the text in the chat input field can now be sent to the server.
+		
 
 		// Get input from GUI window
 		String input = m_GUI.getInput();
@@ -95,7 +90,6 @@ public class Client implements ActionListener
 			case "/connect":
 			case "/c":
 				String hostname = input.split(" ")[1];
-				// msg = new ChatMessage(m_name, type, null, null);
 				try
 				{
 					m_connection.connect(hostname);
@@ -104,7 +98,7 @@ public class Client implements ActionListener
 					System.err.println("Error: IO exception when conencting to server");
 					e1.printStackTrace();
 				}
-			
+
 				break;
 
 			case "/disconnect":

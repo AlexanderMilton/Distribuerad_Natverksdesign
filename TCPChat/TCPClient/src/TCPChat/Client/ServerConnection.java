@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package TCPChat.Client;
 
 import java.io.BufferedReader;
@@ -63,34 +59,36 @@ public class ServerConnection
 		m_writer.println(sendThis.getString());
 		System.out.println("Sending ChatMessage: " + sendThis.getString());
 
-		// Receive response		
-		String received = m_reader.readLine();
-		String response = new ChatMessage(received).getMessage();
+		// Receive response
+		ChatMessage received = new ChatMessage(m_reader.readLine());
+		String response = received.getMessage();
 
-		if (response.equals("OK"))
+		while(true)
 		{
-			// Connection approved
-			System.out.println("Connection approved by server");
-			return true;
-		}
-		else if (response.equals("NAME"))
-		{
-			// Name already taken
-			System.err.println("Error: that name is already taken by another user");
-			return false;
-		}
-		else
-		{
-			// Unknown response
-			System.err.println("Error: unknown connection response: " + response);
-			System.exit(1);
-			return false;
+			// If a heartbeat is received before acknowledgment, simply respond to it
+			if (received.getCommand().equals("heartbeat"))
+				heartbeat();
+			
+			if (response.equals("OK"))
+			{
+				// Connection approved
+				System.out.println("Connection approved by server");
+				return true;
+			} else if (response.equals("NAME"))
+			{
+				// Name already taken
+				System.err.println("Error: that name is already taken by another user");
+				return false;
+			}
+			 else
+			{
+					// Unknown response
+				System.err.println("Error: unknown connection response: " + response);
+				System.exit(1);
+				return false;
+			}
 		}
 	}
-
-	/*
-	 * String sender String command String parameters String message
-	 */
 
 	// DISCONNECT
 	public void disconnect()
@@ -109,7 +107,7 @@ public class ServerConnection
 	}
 
 	// HELP
-	public void help() // TODO: Does this go in the client or through the server?
+	public void help()
 	{
 		ChatMessage message = new ChatMessage(m_name, "help", "", "");
 		System.out.println("Sending help request");
@@ -123,7 +121,7 @@ public class ServerConnection
 		System.out.println("Send whisper to " + recepient);
 		m_writer.println(message.getString());
 	}
-	
+
 	// BROADCAST
 	public void broadcast(String msg)
 	{
@@ -133,7 +131,7 @@ public class ServerConnection
 	}
 
 	// CAT
-	public void cat() 
+	public void cat()
 	{
 		ChatMessage message = new ChatMessage(m_name, "cat", "", "");
 		m_writer.println(message.getString());
@@ -148,26 +146,26 @@ public class ServerConnection
 			chatMessage = new ChatMessage(m_reader.readLine());
 		} catch (IOException e)
 		{
-			// TODO Auto-generated catch block
+			System.err.println("Error: failed to receive message");
 			e.printStackTrace();
 		}
 
-		if(chatMessage.getCommand().equals("heartbeat"))
+		if (chatMessage.getCommand().equals("heartbeat"))
 		{
 			heartbeat();
 			return "";
 		}
-			
-		else if(chatMessage.getCommand().equals("message"))
+
+		else if (chatMessage.getCommand().equals("message"))
 			return chatMessage.getMessage();
-		
+
 		else
 		{
 			System.err.println("Error: unknown message type: " + chatMessage.getCommand());
 			return "";
 		}
 	}
-	
+
 	private void heartbeat()
 	{
 		ChatMessage message = new ChatMessage(m_name, "heartbeat", "", "");
