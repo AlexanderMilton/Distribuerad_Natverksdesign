@@ -56,6 +56,11 @@ public class ServerConnection
 
 	}
 
+	public void handleInput(String input)
+	{
+
+	}
+
 	public boolean connect(String name) throws IOException
 	{
 		// Send connection request
@@ -141,37 +146,16 @@ public class ServerConnection
 
 	public String receiveChatMessage()
 	{
-		ChatMessage chatMessage = null;
+		String message = "";
 		try
 		{
 			System.out.println("Receiving message...");
-			chatMessage = new ChatMessage(m_reader.readLine());
+			message = m_reader.readLine();
 		} catch (IOException e)
 		{
-			// TODO Auto-generated catch block
+			System.err.println("Error: failed to read from Buffered Reader");
 			e.printStackTrace();
 		}
-
-		if(chatMessage.getCommand().equals("heartbeat"))
-		{
-			heartbeat();
-			return "";
-		}
-			
-		else if(chatMessage.getCommand().equals("message"))
-			return chatMessage.getMessage();
-		
-		else
-		{
-			System.err.println("Error: unknown message type: " + chatMessage.getCommand());
-			return "";
-		}
-	}
-	
-	private void heartbeat()
-	{
-		ChatMessage message = new ChatMessage(m_name, "heartbeat", "", "");
-		System.out.println("Send heartbeat");
-		m_writer.println(message.getString());
+		return message;
 	}
 }

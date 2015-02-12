@@ -62,9 +62,7 @@ public class Client implements ActionListener
 	{
 		do
 		{
-			String message = new String(m_connection.receiveChatMessage());
-			if (!message.isEmpty())
-				m_GUI.displayMessage(message);
+			m_GUI.displayMessage(m_connection.receiveChatMessage());
 		} while (true);
 	}
 

@@ -56,9 +56,6 @@ public class Server
 	{
 		m_port = portNumber;
 		m_serverSocket = new ServerSocket(m_port);
-
-		criticalSection.drainPermits();
-		secondBeat.drainPermits();
 		
 		Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
@@ -196,20 +193,19 @@ public class Server
 			while (true)
 			{
 				// Release any held criticalSections
-//				criticalSection.release();
+				criticalSection.release();
 				
 				// Heartbeat every few seconds
 				try
 				{
 					Thread.sleep(10000);
-//					criticalSection.acquire();
+					criticalSection.acquire();
 				} catch (InterruptedException e)
 				{
 					System.err.println("Error: failed to sleep");
 					e.printStackTrace();
 				}
 				
-				System.out.println("Sending heartbeat to clients");
 				
 				ClientConnection c;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
@@ -220,25 +216,12 @@ public class Server
 					if (c.isCrashed() || c.isDisconnected())
 						continue;
 					
-					
 					// Send heartbeat and wait
 					m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
+					secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS);
 					
-					try
-					{
-						// Send heartbeat and wait
-						m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
-						secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException e)
-					{
-						// No heartbeat received
-						System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-						disconnect(c.getName());
-						continue;
-					}
-
-					// Second heartbeat acquired
-					System.out.println("Received heartbeat from " + c.getName());
+					// No heartbeat received
+					disconnect(c.getName());
 				}
 			}
 		}
@@ -273,7 +256,8 @@ public class Server
 			break;
 
 		case "heartbeat":
-			secondBeat.release();
+			//criticalSection.release();
+			notify();
 			break;
 
 		default:

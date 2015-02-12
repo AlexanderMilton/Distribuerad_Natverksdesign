@@ -15,7 +15,6 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import TCPChat.Shared.ChatMessage;
 
@@ -27,8 +26,7 @@ public class Server
 	private int m_port = -1;
 	private PrintWriter m_writer;
 	private BufferedReader m_reader;
-	private Semaphore criticalSection = new Semaphore(1, true);
-	private Semaphore secondBeat = new Semaphore(1, true);
+	private Semaphore semaphore = new Semaphore(1);
 
 	public static void main(String[] args)
 	{
@@ -56,21 +54,16 @@ public class Server
 	{
 		m_port = portNumber;
 		m_serverSocket = new ServerSocket(m_port);
-
-		criticalSection.drainPermits();
-		secondBeat.drainPermits();
 		
 		Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
-		Thread heartbeat = new Thread(new HeartbeatThread());
-		
+
 		clientHandler.start();
 		messageHandler.start();
-		heartbeat.start();
 	}
 
 	// Thread concurrently accepts incoming client connections
-	private class ClientConnectionThread implements Runnable
+	public class ClientConnectionThread implements Runnable
 	{
 		@Override
 		public void run()
@@ -79,20 +72,6 @@ public class Server
 			
 			while (true)
 			{
-				// Release any held criticalSections
-				criticalSection.release();
-				
-				// Sleep between checks
-				try
-				{
-					Thread.sleep(1000);
-					criticalSection.acquire();
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to sleep");
-					e.printStackTrace();
-				}
-				
 				// Wait for a new client to connect to the server
 				Socket clientSocket = new Socket();
 				ChatMessage clientMessage = null;
@@ -153,17 +132,6 @@ public class Server
 		{	
 			while (true)
 			{
-				try
-				{
-					// Renew criticalSection
-					criticalSection.release();
-					criticalSection.acquire();
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to acquire criticalSection");
-					e.printStackTrace();
-				}
-				
 				ClientConnection c;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 				{
@@ -187,61 +155,10 @@ public class Server
 		}
 	}
 	
-	// Check the status of all connections
-	public class HeartbeatThread implements Runnable
+	// Check the status of a connection
+	private class heartbeat implements Runnable
 	{
-		@Override
-		public void run()
-		{			
-			while (true)
-			{
-				// Release any held criticalSections
-//				criticalSection.release();
-				
-				// Heartbeat every few seconds
-				try
-				{
-					Thread.sleep(10000);
-//					criticalSection.acquire();
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to sleep");
-					e.printStackTrace();
-				}
-				
-				System.out.println("Sending heartbeat to clients");
-				
-				ClientConnection c;
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-				{
-					c = itr.next();
-
-					// Skip crashed clients
-					if (c.isCrashed() || c.isDisconnected())
-						continue;
-					
-					
-					// Send heartbeat and wait
-					m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
-					
-					try
-					{
-						// Send heartbeat and wait
-						m_writer.println(new ChatMessage("", "heartbeat", "", "").getString());
-						secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException e)
-					{
-						// No heartbeat received
-						System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-						disconnect(c.getName());
-						continue;
-					}
-
-					// Second heartbeat acquired
-					System.out.println("Received heartbeat from " + c.getName());
-				}
-			}
-		}
+		
 	}
 	
 	private void handleMessage(ChatMessage message)
@@ -273,7 +190,7 @@ public class Server
 			break;
 
 		case "heartbeat":
-			secondBeat.release();
+			cat(message.getSender());
 			break;
 
 		default:

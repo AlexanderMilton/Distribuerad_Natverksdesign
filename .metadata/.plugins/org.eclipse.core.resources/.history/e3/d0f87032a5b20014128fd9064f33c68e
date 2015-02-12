@@ -56,9 +56,6 @@ public class Server
 	{
 		m_port = portNumber;
 		m_serverSocket = new ServerSocket(m_port);
-
-		criticalSection.drainPermits();
-		secondBeat.drainPermits();
 		
 		Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
@@ -231,14 +228,14 @@ public class Server
 						secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException e)
 					{
-						// No heartbeat received
-						System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-						disconnect(c.getName());
+						// Seconds heartbeat acquired
+						System.out.println("Received heartbeat from " + c.getName());
 						continue;
 					}
-
-					// Second heartbeat acquired
-					System.out.println("Received heartbeat from " + c.getName());
+					
+					// No heartbeat received
+					System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
+					disconnect(c.getName());
 				}
 			}
 		}

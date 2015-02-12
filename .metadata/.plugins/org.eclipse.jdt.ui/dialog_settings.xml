@@ -15,16 +15,16 @@
 	</section>
 	<section name="FatJarPackageWizard">
 		<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
-		<item value="TCPChat\TCPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
-		<item value="TCPServer - TCPChat" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="TCPChat\TCPClient\Client.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="TCPClient - TCPChat" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
+			<item value="TCPChat\TCPClient\Client.jar"/>
+			<item value="TCPChat/TCPClient/src/TCPChat/Client.jar"/>
 			<item value="TCPChat\TCPServer\Server.jar"/>
 			<item value="TCPChat/TCPServer/Server.jar"/>
 			<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCP\TCPServer\Server.jar"/>
-			<item value="\\hsnas3\StudentHome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\TCPChat\TCPServer\Server.jar"/>
-			<item value="\\hsnas3\StudentHome\2013\b13alemi\GitHub\Distribuerad_Natverksdesign\TCP\TCPServer\Server.jar"/>
 		</list>
 		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
 			<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml"/>
@@ -52,7 +52,15 @@
 	<section name="NewPackageWizardPage">
 		<item value="false" key="create_package_info_java"/>
 	</section>
+	<section name="org.eclipse.jdt.internal.ui.typehierarchy.QuickHierarchy">
+		<item value="true" key="org.eclipse.jdt.internal.ui.typehierarchy.HierarchyInformationControlDIALOG_USE_PERSISTED_SIZE"/>
+		<item value="306" key="org.eclipse.jdt.internal.ui.typehierarchy.HierarchyInformationControlDIALOG_HEIGHT"/>
+		<item value="350" key="org.eclipse.jdt.internal.ui.typehierarchy.HierarchyInformationControlDIALOG_WIDTH"/>
+		<item value="false" key="org.eclipse.jdt.internal.ui.typehierarchy.HierarchyInformationControlDIALOG_USE_PERSISTED_LOCATION"/>
+	</section>
 	<section name="completion_proposal_size">
+		<item value="253" key="size.y"/>
+		<item value="355" key="size.x"/>
 	</section>
 	<section name="JavaElementSearchActions">
 	</section>

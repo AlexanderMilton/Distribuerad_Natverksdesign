@@ -170,8 +170,6 @@ public class ServerConnection
 	
 	private void heartbeat()
 	{
-		ChatMessage message = new ChatMessage(m_name, "heartbeat", "", "");
-		System.out.println("Send heartbeat");
-		m_writer.println(message.getString());
+		
 	}
 }

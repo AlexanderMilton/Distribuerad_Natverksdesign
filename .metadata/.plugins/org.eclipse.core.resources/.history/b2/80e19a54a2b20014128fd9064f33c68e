@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import TCPChat.Shared.ChatMessage;
-
 /**
  * 
  * @author brom
@@ -47,8 +45,7 @@ public class ClientConnection
 		if (crashed)
 			return;
 		
-		ChatMessage chatMessage = new ChatMessage("", "message", "", message);
-		m_writer.println(chatMessage.getString());
+		m_writer.println(message);
 	}
 
 	public String getName()
