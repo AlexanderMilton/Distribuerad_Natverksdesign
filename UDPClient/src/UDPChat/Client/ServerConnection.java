@@ -27,16 +27,17 @@ public class ServerConnection
 	int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
 	public DatagramSocket m_socket = null;
-	
-//	private int m_ackPort = -1;
-//	private InetAddress m_ackAddress = null;
-//	public DatagramSocket m_ackSocket = null;
+
+	// private int m_ackPort = -1;
+	// private InetAddress m_ackAddress = null;
+	// public DatagramSocket m_ackSocket = null;
 
 	private String m_name;
 	private int message = 0;
 	private int latestMessageID = 0;
-//	private boolean isAcked = false;
-//	private boolean recentlyReceived = false;
+
+	// private boolean isAcked = false;
+	// private boolean recentlyReceived = false;
 
 	public boolean connect(String name)
 	{
@@ -45,26 +46,25 @@ public class ServerConnection
 		{
 			System.err.println("Error: username can be at most 20 characters.");
 			return false;
-		}
-		else if (name.length() < 3)
+		} else if (name.length() < 3)
 		{
 			System.err.println("Error: username must be at least 3 characters.");
 			return false;
 		}
-		
+
 		String message = new String("01" + "|" + getMessageID() + "|" + name);
-		
+
 		// Send connection request (handshake)
 		System.out.println("Sending handshake to server...");
 		String response = new String(unpack(sendMessage(message, m_socket, m_serverPort)));
-		
+
 		System.out.println("Unpacked handshake response: " + response);
-		
+
 		// Handshake successful
 		if (response.split("\\|")[1].equals("OK"))
 		{
 			System.out.println("Successfully connected to server\n");
-			send("%ACK%", m_socket, m_serverPort);
+//			send("%ACK%", m_socket, m_serverPort);
 			return true;
 		}
 
@@ -79,12 +79,12 @@ public class ServerConnection
 		System.err.println("Error: unknown handshake return: " + response);
 		return false;
 	}
-	
+
 	public ServerConnection(String hostName, int port, String name)
 	{
 		m_name = name;
 		m_serverPort = port;
-		
+
 		// Get host address by name
 		try
 		{
@@ -119,10 +119,10 @@ public class ServerConnection
 		// Trim message
 		String message = msg;
 		message.trim();
-		
+
 		// Pack message with the given type
 		DatagramPacket packet = packMsg(message, m_serverAddress, port);
-		
+
 		if (failure > TRANSMISSION_FAILURE_RATE)
 		{
 			// Send message
@@ -139,13 +139,13 @@ public class ServerConnection
 		// Message failed to send
 		System.err.println("Error: failed to send message");
 	}
-	
+
 	public DatagramPacket sendMessage(String msg, DatagramSocket socket, int port)
 	{
 
 		byte[] data = new byte[256];
 		DatagramPacket acknowledgment = new DatagramPacket(data, data.length);
-				
+
 		try
 		{
 			socket.setSoTimeout(1000);
@@ -153,15 +153,15 @@ public class ServerConnection
 		{
 			e.printStackTrace();
 		}
-		
+
 		for (int i = 0; i <= MAX_SEND_ATTEMPTS; i++)
-    	{
+		{
 			try
 			{
 				// Send message
 				System.out.println("Sending message: " + msg);
 				send(msg, socket, port);
-				
+
 				// Wait for acknowledgment
 				System.out.println("Awaiting acknowledgment...");
 				socket.receive(acknowledgment);
@@ -169,27 +169,27 @@ public class ServerConnection
 				// Received acknowledgment, return packet
 				System.out.println("Received acknowledgment");
 				return acknowledgment;
-				
+
 			} catch (SocketTimeoutException e)
-			{ 
+			{
 				// Socket timed out
 				System.out.println("Socket timed out, " + (MAX_SEND_ATTEMPTS - i) + " attempts left");
 			} catch (IOException e)
 			{
 				System.err.println("Error: I/O-exception");
 			}
-    	}
+		}
 		System.err.println("Error: failed to receive message");
 		System.exit(1);
 		return acknowledgment;
 	}
-	
+
 	public DatagramPacket receivePacket(DatagramSocket socket) throws SocketTimeoutException
 	{
 		byte[] data = new byte[256];
 		data = "".getBytes();
 		DatagramPacket packet = new DatagramPacket(data, data.length);
-		
+
 		try
 		{
 			socket.receive(packet);
@@ -204,14 +204,14 @@ public class ServerConnection
 		}
 		return packet;
 	}
-	
+
 	public String receiveMessage()
 	{
 		DatagramPacket packet = null;
 		String message = null;
 		String[] messageComponent = null;
 		int receivedMessageID = 0;
-		
+
 		while (true)
 		{
 			try
@@ -219,54 +219,49 @@ public class ServerConnection
 				// Receive and unpack a server distributed message
 				packet = receivePacket(m_socket);
 				message = unpack(packet);
-				
-				System.out.println("Received message: " + message);
-				
-				switch(message)
+
+				switch (message)
 				{
-					case "OK": case "NAME":
-						return message;
-						
-					case "DC":
-						m_socket.close();
-						System.exit(0);
-						break;
-					case "":
-						return "";
+				case "OK":
+				case "NAME":
+					return message;
+
+				case "DC":
+					m_socket.close();
+					System.exit(0);
+					break;
+				case "":
+					return "";
 				}
-				
+
 				messageComponent = message.split("\\|");
 
-				System.out.println("received a message of component-lngt: " + messageComponent.length);
 				System.out.println(message);
-				System.out.println(messageComponent[0]);
-				System.out.println(messageComponent[1]);
-				
+
 				// Check the ID of the message
 				receivedMessageID = Integer.parseInt(messageComponent[0]);
-				
+
 				if (receivedMessageID <= latestMessageID)
 				{
 					// Acknowledge reception
 					send("%ACK%", m_socket, packet.getPort());
 					return "";
-				}
-				else
+				} else
 				{
-					latestMessageID = receivedMessageID;			
+					latestMessageID = receivedMessageID;
 				}
-				
+
 				// Acknowledge reception
 				send("%ACK%", m_socket, packet.getPort());
 				return messageComponent[1];
-			
+
 			} catch (SocketTimeoutException e)
 			{
 				// Socket timed out
 			}
 		}
 	}
-	
+
 	public String getMessageID()
 	{
 		message++;
@@ -280,17 +275,12 @@ public class ServerConnection
 		data = msg.getBytes();
 		return new DatagramPacket(data, msg.length(), address, port);
 	}
-	
+
 	public String unpack(DatagramPacket packet)
 	{
 		return new String(packet.getData(), 0, packet.getLength());
 	}
-	
-	
 
-
-	
-	
 //	public void sendAcknowledgment()
 //	{
 //		// Randomize a failure variable
@@ -298,7 +288,7 @@ public class ServerConnection
 //
 //		// Pack ack
 //		DatagramPacket packet = packAck();
-//			
+//
 //		double failure = generator.nextDouble();
 //
 //		// Send ack
@@ -314,7 +304,7 @@ public class ServerConnection
 //		{
 //			e.printStackTrace();
 //		}
-//		
+//
 //		// Message failed to send
 //		System.err.println("Error: failed to send ack");
 //	}
@@ -323,7 +313,7 @@ public class ServerConnection
 //	{
 //		byte[] buf = new byte[256];
 //		DatagramPacket packet = new DatagramPacket(buf, buf.length);
-//		
+//
 //		try
 //		{
 //			m_socket.receive(packet);
@@ -336,48 +326,46 @@ public class ServerConnection
 //		// Unpack and split message
 //		String message = unpack(packet);
 //		String[] messageComponent = message.split("\\|");
-//		
+//
 //		System.out.println("Received message: " + message);
-//		
+//
 //		int receivedMessageID = Integer.parseInt(messageComponent[0]);
 //		message = messageComponent[1];
-//		
+//
 //		if (receivedMessageID <= previousMessageID)
 //		{
 //			sendAcknowledgment();
 //			return "";
 //		}
-//		
+//
 //		else
 //		{
-//			previousMessageID = receivedMessageID;			
+//			previousMessageID = receivedMessageID;
 //		}
-//		
+//
 //		if (message.equals("%ACK%"))
 //		{
 //			System.out.println("Received ack");
 //			return "";
 //		}
-//		
+//
 //		else if (message.equals("%DC%"))
 //		{
 //			m_socket.close();
 //			return "You have been disconnected";
 //		}
-//		
-////		else if (message.equals("%POLL%"))
-////		{
-////			sendChatMessage("%ACK%", m_socket);
-////			return "";
-////		}
-//		
-//		else 
+//
+//		// else if (message.equals("%POLL%"))
+//		// {
+//		// sendChatMessage("%ACK%", m_socket);
+//		// return "";
+//		// }
+//
+//		else
 //		{
 //			sendAcknowledgment();
 //			return messageComponent[1];
 //		}
 //	}
-	
-	
 
 }

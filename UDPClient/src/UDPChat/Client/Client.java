@@ -13,26 +13,26 @@ public class Client implements ActionListener
 	{
 		if (args.length < 3)
 		{
-			System.err
-					.println("Usage: java -jar Client.jar <serverhostname> <serverportnumber> <username>");
+			System.err.println("Usage: java -jar Client.jar <serverhostname> <serverportnumber> <username>");
 			System.exit(-1);
 		}
 
-//		try
-//		{
-			Client instance = new Client(args[2]);
-			instance.connectToServer(args[0], Integer.parseInt(args[1]));
-//		} //catch (NumberFormatException e)
-//		{
-//			System.err.println("Error: port number must be an integer: " + Integer.parseInt(args[1]));
-//			System.exit(-1);
-//		}
+		// try
+		// {
+		Client instance = new Client(args[2]);
+		instance.connectToServer(args[0], Integer.parseInt(args[1]));
+		// } //catch (NumberFormatException e)
+		// {
+		// System.err.println("Error: port number must be an integer: " +
+		// Integer.parseInt(args[1]));
+		// System.exit(-1);
+		// }
 	}
 
 	private Client(String userName)
 	{
 		m_name = userName;
-		
+
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
 	}
@@ -54,18 +54,20 @@ public class Client implements ActionListener
 	private void listenForServerMessages()
 	{
 		do
-		{	
+		{
 			String message = m_connection.receiveMessage();
-			
-			if(!message.isEmpty())
+
+			if (!message.isEmpty())
 				m_GUI.displayMessage(message);
-			
+
 			// Terminate client if socket has been closed
 			if (m_connection.m_socket.isClosed())
 			{
-				try {
+				try
+				{
 					Thread.sleep(1500);
-				} catch(InterruptedException e) {
+				} catch (InterruptedException e)
+				{
 					Thread.currentThread().interrupt();
 				}
 				System.exit(0);
@@ -73,7 +75,8 @@ public class Client implements ActionListener
 		} while (true);
 	}
 
-	// Sole ActionListener method; acts as a callback from GUI when user hits enter in input field
+	// Sole ActionListener method; acts as a callback from GUI when user hits
+	// enter in input field
 
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -91,11 +94,11 @@ public class Client implements ActionListener
 			switch (stringArray[0])
 			{
 
-//			// Connect to server - OBSOLETE
-//			case "/connect": case "/c": message = "01" + "|" + m_name;
-//				message = "01" + "|" + m_connection.getMessageID() + "|" + m_name;
-//				break;
-			 
+			// // Connect to server - OBSOLETE
+			// case "/connect": case "/c": message = "01" + "|" + m_name;
+			// message = "01" + "|" + m_connection.getMessageID() + "|" +
+			// m_name;
+			// break;
 
 			// Send private message
 			case "/whisper":
@@ -114,7 +117,7 @@ public class Client implements ActionListener
 			case "/quit":
 			case "/exit":
 			case "/dc":
-				message = "04" + "|" + m_connection.getMessageID() + "|"	+ m_name;
+				message = "04" + "|" + m_connection.getMessageID() + "|" + m_name;
 				break;
 
 			default:
