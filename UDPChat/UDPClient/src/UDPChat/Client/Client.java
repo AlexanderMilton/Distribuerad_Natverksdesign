@@ -1,0 +1,135 @@
+package UDPChat.Client;
+
+import java.awt.event.*;
+import java.io.IOException;
+
+import UDPChat.Client.ChatGUI;
+import UDPChat.Client.Client;
+import UDPChat.Client.ServerConnection;
+
+public class Client implements ActionListener
+{
+	static String DELIMIT = "|";
+	private String m_name = null;
+	private final ChatGUI m_GUI;
+	private ServerConnection m_connection = null;
+
+	public static void main(String[] args)
+	{
+		if (args.length < 3)
+		{
+			System.err.println("Usage: java Client serverhostname serverportnumber username");
+			System.exit(-1);
+		}
+
+		try
+		{
+			Client instance = new Client(args[2]);
+			instance.connectToServer(args[0], Integer.parseInt(args[1]));
+		} catch (NumberFormatException e)
+		{
+			System.err.println("Error: port number must be an integer.");
+			System.exit(-1);
+		}
+	}
+
+	private Client(String userName)
+	{
+		m_name = userName;
+
+		// Start up GUI (runs in its own thread)
+		m_GUI = new ChatGUI(this, m_name);
+	}
+
+	private void connectToServer(String hostName, int port)
+	{
+		m_connection = new ServerConnection(hostName, port, m_name);
+		try
+		{
+			if (m_connection.connect(m_name))
+			{
+				listenForServerMessages();
+			} else
+			{
+				System.err.println("Unable to connect to server");
+			}
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception when conencting to server");
+			e.printStackTrace();
+		}
+	}
+
+	private void listenForServerMessages()
+	{
+		do
+		{
+			String message = new String(m_connection.receiveChatMessage());
+			if (!message.isEmpty())
+				m_GUI.displayMessage(message);
+		} while (true);
+	}
+
+	// Sole ActionListener method; acts as a callback from GUI when user hits enter in input field
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		
+
+		// Get input from GUI window
+		String input = m_GUI.getInput();
+
+		if (input.isEmpty())
+			return;
+
+		String message = new String();
+
+		if (input.startsWith("/"))
+		{
+			// Input is a command
+			String command = new String(input.split(" ")[0].trim().toLowerCase());
+
+			switch (command)
+			{
+			case "/connect":
+			case "/c":
+				String hostname = input.split(" ")[1];
+				try
+				{
+					m_connection.connect(hostname);
+				} catch (IOException e1)
+				{
+					System.err.println("Error: IO exception when conencting to server");
+					e1.printStackTrace();
+				}
+				break;
+
+			case "/disconnect":
+			case "/dc":
+				m_connection.disconnect();
+				break;
+
+			case "/whisper":
+			case "/w":
+				String recepient = input.split(" ")[1];
+				message = input.split(" ", 3)[2];
+				m_connection.whisper(recepient, message);
+				break;
+
+			case "/list":
+			case "/l":
+				m_connection.list();
+				break;
+
+			default:
+				break;
+			}
+		} else
+		{
+			// Type is broadcast
+			message = input;
+			m_connection.broadcast(message);
+		}
+		m_GUI.clearInput();
+	}
+}

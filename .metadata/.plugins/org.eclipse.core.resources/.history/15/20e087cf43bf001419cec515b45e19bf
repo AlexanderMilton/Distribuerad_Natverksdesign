@@ -1,0 +1,62 @@
+package UDPChat.Shared;
+
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+
+public class ChatMessage
+{
+
+	static String dl = "/"; // Delimiter
+	private byte[] buf = new byte[256];
+	private DatagramPacket packet = new DatagramPacket(buf, buf.length);
+
+	int type;
+	String sender;
+	int ID;
+	String text;
+	String parameter;
+	InetAddress address;
+	int port;
+
+	public ChatMessage()
+	{
+
+	}
+
+	public ChatMessage(InetAddress address, int port, int type, String sender, int ID, String parameter, String text)
+	{
+		String message = type + dl + sender + dl + ID + dl + parameter + dl + text;
+		packet = new DatagramPacket(message.getBytes(), message.length(), address, port);
+	}
+
+	public ChatMessage(DatagramPacket packet)
+	{
+		String message = new String(packet.getData(), 0, packet.getLength()).trim();
+		message.split(regex, limit)
+	}
+	
+	public DatagramPacket getPacket()
+	{
+		return packet;
+	}
+
+	public String getType()
+	{
+		
+	}
+
+	public String getSender()
+	{}
+
+	public String getParameter()
+	{}
+
+	public String getTimeStamp()
+	{}
+
+	public String getMessage()
+	{}
+
+	public String getString()
+	{}
+}

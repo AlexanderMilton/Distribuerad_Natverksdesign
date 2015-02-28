@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCP\Shared\TCPChat\Shared" key="org.eclipse.jdt.ui.lastextjar"/>
-	<item value="P:\GitHub\Distribuerad_Natverksdesign\TCP" key="org.eclipse.jdt.ui.last.external.project"/>
+	<item value="JavaSE-1.7" key="org.eclipse.jdt.ui.last.selected.execution.enviroment"/>
+	<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\TCPChat\Shared\TCPChat\Shared" key="org.eclipse.jdt.ui.lastextjar"/>
+	<item value="G:\Library - Documents\GitHub\GBall" key="org.eclipse.jdt.ui.last.external.project"/>
 	<section name="org.eclipse.ltk.ui.refactoring.settings">
 		<item value="false" key="updateQualifiedNames"/>
 		<item value="*" key="patterns"/>
@@ -31,16 +32,16 @@
 	</section>
 	<section name="FatJarPackageWizard">
 		<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
-		<item value="UDPServer\Server.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
-		<item value="Server - UDPServer" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="UDPClient\Client.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="Client Alex - UDPClient" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
-			<item value="UDPServer/Server.jar"/>
+			<item value="UDPClient\Client.jar"/>
+			<item value="UDPServer\Server.jar"/>
 			<item value="UDPClient/Client.jar"/>
+			<item value="UDPServer/Server.jar"/>
 			<item value="TCPChat\TCPClient\Client.jar"/>
-			<item value="TCPChat/TCPClient/src/TCPChat/Client.jar"/>
-			<item value="TCPChat\TCPServer\Server.jar"/>
 		</list>
 		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
 			<item value="G:\Library - Documents\GitHub\Distribuerad_Natverksdesign.xml"/>
@@ -61,6 +62,8 @@
 	<section name="completion_proposal_size">
 		<item value="253" key="size.y"/>
 		<item value="355" key="size.x"/>
+		<item value="221" key="contextSelector.size.y"/>
+		<item value="331" key="contextSelector.size.x"/>
 	</section>
 	<section name="JavaElementSearchActions">
 	</section>

@@ -46,7 +46,7 @@ public class ClientConnection
 		} catch (SocketException e)
 		{
 			e.printStackTrace();
-			System.err.println("Error: invalid port.");
+			System.err.println("Error: socket exception.");
 		}
 
 		// Set socket timeout
@@ -63,23 +63,25 @@ public class ClientConnection
 	// For initiating communication
 	public void sendMessage(String msg, int messageID, DatagramSocket socket)
 	{
-		send(msg, messageID, socket, m_clientPort);
+//		send(msg, messageID, socket, m_clientPort);
+		send(msg, messageID,socket);
 	}
 
 	// For sending replies to incoming communications
-	public void sendReply(String msg, int messageID, DatagramSocket socket, DatagramPacket reply)
+	public void sendReply(String msg, String messageID, DatagramSocket socket, DatagramPacket reply)
 	{
-		send(msg, messageID, socket, reply.getPort());
+//		send(msg, messageID, socket, reply.getPort());
+		send(msg, Integer.parseInt(messageID), socket);
 	}
 
 	// TODO change to private
-	public void send(String msg, int messageID, DatagramSocket socket, int port)
+	public void send(String msg, int messageID, DatagramSocket socket)//, int port)
 	{
 		// Randomize a failure variable
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 
-		System.out.println("port: " + port);
+		System.out.println("port: " + socket.getLocalPort());
 		System.out.println("msg: " + msg);
 
 		DatagramPacket packet = pack(messageID, msg);
@@ -127,6 +129,7 @@ public class ClientConnection
 	// {
 	// m_ackSocket.receive(packet);
 	// } catch (IOException e)
+	
 	// {
 	// System.out.println("Failed to receive ack from client");
 	// }

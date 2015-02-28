@@ -1,21 +1,6 @@
 INDEX VERSION 1.127+G:\Library - Documents\GitHub\Distribuerad_Natverksdesign\.metadata\.plugins\org.eclipse.jdt.core
-43116916.index
-2862505046.index
-3049161584.index
-1338033372.index
-416585214.index
-2272864515.index
-4240231638.index
-1236749729.index
-442916426.index
-1681366839.index
-1402071364.index
-2930000341.index
-411808680.index
-2639897890.index
-3516674917.index
-398808090.index
-3469357943.index
-592100015.index
-2429832945.index
-2270138345.index
+1214986310.index
+439576129.index
+2493164606.index
+3577932261.index
+1103450713.index

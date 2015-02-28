@@ -88,6 +88,11 @@ public class Server
 				 * message/argument messageComponent[4] = message (if argument
 				 * present)
 				 */
+				
+				if (message.equals("ACK"))
+				{
+					
+				}
 
 				String[] messageComponent = message.split("\\|");
 
@@ -105,10 +110,10 @@ public class Server
 				String sender = messageComponent[2];
 
 				// Check if message has already been interpreted
-				if (messageAlreadyInterpreted(messageID))
+				if (messageAlreadyInterpreted(sender + messageID))
 				{
 					System.out.println("Message already interpreted");
-					acknowledgeMessage("OK", sender, packet);
+					acknowledgeMessage("ACK", sender, packet, messageID);
 					continue;
 				}
 
@@ -173,7 +178,7 @@ public class Server
 		{
 
 			// Send message
-			recepient.send(msg, messageID, socket, getMessageID());
+			recepient.sendMessage(msg, messageID, socket);
 
 			try
 			{
@@ -225,7 +230,7 @@ public class Server
 			if (c.hasName(sender))
 			{
 				// The name is already taken by another client
-				acknowledgeMessage("NAME", sender, packet);
+				acknowledgeMessage("NAME", sender, packet, "0");
 
 				// Client response acquired
 				return;
@@ -234,7 +239,7 @@ public class Server
 		m_connectedClients.add(newClient);
 
 		// Send acknowledgment
-		acknowledgeMessage("OK", sender, packet);
+		acknowledgeMessage("ACK", sender, packet, "0");
 	}
 
 	private void whisper(ClientConnection recepient, ClientConnection sender, String msg)
@@ -376,7 +381,7 @@ public class Server
 		return false;
 	}
 
-	public void acknowledgeMessage(String msg, String name, DatagramPacket packet)
+	public void acknowledgeMessage(String msg, String name, DatagramPacket packet, String messageID)
 	{
 		System.out.println("Acknowledging message from " + name + "...");
 		ClientConnection c;
@@ -385,7 +390,7 @@ public class Server
 			c = itr.next();
 			if (c.hasName(name))
 			{
-				c.sendReply(msg, getMessageID(), m_socket, packet);
+				c.sendReply(msg, messageID, m_socket, packet);
 			}
 		}
 	}
