@@ -14,6 +14,7 @@ import UDPChat.Shared.ChatMessage;
 
 public class Server
 {
+	private static String HELP_STRING = "[Help and commands]\n> Type a message to broadcast it to all users\n> Type /help or /h to show this message\n> Type /list or /l to view a list of all active users\n> Type /whisper or /w followed by a username and a message (delimited by spaces) to send a private message to that user\n> Type /cat and squint for some awesome ASCII art\n> Type /disconnect or /dc to leave the chat";
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private DatagramSocket m_socket;
 	private int m_port = -1;
@@ -52,7 +53,7 @@ public class Server
 
 		secondBeat.drainPermits();
 
-		//Thread clientHandler = new Thread(new ClientConnectionThread());
+		Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
 		Thread heartbeatHandler = new Thread(new HeartbeatThread());
 		Thread cartHandler = new Thread(new BringOutYerDeadThread());
@@ -287,41 +288,45 @@ public class Server
 
 	private void handleMessage(ChatMessage message)
 	{
-		switch (message.getType())
+		switch (message.getCommand())
 		{
-		case 1:		// "connect"
-			connect(message.getSender());
+		case "broadcast":
+			broadcast(message.getSender(), message.getMessage());
 			break;
 
-		case 2:		// "disconnect"
+		case "disconnect":
 			disconnect(message.getSender());
 			break;
 
-		case 3:		// "list"
+		case "whisper":
+			whisper(message.getParameter(), message.getSender(), message.getMessage());
+			break;
+
+		case "list":
 			list(message.getSender());
 			break;
 
-		case 4:		// "whisper"
-			whisper(message.getParameter(), message.getSender(), message.getText());
-			break;
-			
-		case 5:		// "broadcast"
-			broadcast(message.getSender(), message.getText());
+		case "help":
+			help(message.getSender());
 			break;
 
-		case 6:		// "heartbeat"
+		case "cat":
+			cat(message.getSender());
+			break;
+
+		case "heartbeat":
 			secondBeat.release();
 			break;
 
 		default:
-			System.out.println("Unknown command received: " + message.getType());
+			System.out.println("Unknown command received: " + message.getCommand());
 			break;
 		}
 	}
 
-	private void connect(String sender)
+	private void broadcast(String sender, String message)
 	{
-		// TODO
+		sendPublicMessage(sender + ": " + message);
 	}
 
 	private void disconnect(String sender)
@@ -338,6 +343,11 @@ public class Server
 		}
 	}
 
+	private void whisper(String recepient, String sender, String message)
+	{
+		sendPrivateMessage(recepient, sender + " whispers: " + message);
+	}
+
 	private void list(String sender)
 	{
 		String list = "[List of all active clients]";
@@ -348,14 +358,16 @@ public class Server
 		sendPrivateMessage(sender, list);
 	}
 
-	private void whisper(String recepient, String sender, String message)
+	private void help(String sender)
 	{
-		sendPrivateMessage(recepient, sender + " whispers: " + message);
+		sendPrivateMessage(sender, HELP_STRING);
 	}
 
-	private void broadcast(String sender, String message)
+	private void cat(String sender)
 	{
-		sendPublicMessage(sender + ": " + message);
+		sendPrivateMessage(
+				sender,
+				"\n=~======================~~~=========,,,,,,:~~====++++????????????????????++=::~= \n=~==================================,,,,,::~~~===++++???????????????????+++=~~~~ \n=~===========~======================,,.,,::~~~~===+++???????????????????+++=~~~~ \n=~==============+==================~,.,,,::~~~~====+++?????????????????++++=~~~= \n=~========+=====+?=================~..,,::~~~=======+++++????+???????+?++++==:~~ \n=~========+=====+?=================:..,,:~~~~========+++++++??++++++++++++++=:~~ \n=========~+=====+++============:,,:=..,,:~~~~=~~~~~~========+++++++++========:== \n=========++=====++?==========:.,:::~..,::~::~~~::,,,,:::~~~======~~:::::~~~==~== \n========+++==++=++?++======~..,::~::..,:~::::::::::,,,,:::~===~~::::::::~~~~=~== \n========++++=+???????+?+==,.,:~=~=~:,,,~~::::,:::,,,,,,,,:=+??=::,,,,,,,::~~=:~= \n~=======??+I?????+=~~..:II++~~~~~=~,,,,~~~~:,,.:,...,..,,~+????:,,,..,,,:::~=~== \n~=======+??II??+~:,.,..=77?+++==~~,:,,:~~===~~~~~==~:::,~=+??I?~,,:,,,::~=~===== \n~=====+?IIIII?+:,,,,.:~I77I??++==~::,.:~~=====~:~~~:~~====+??I?++:::~=====+++=== \n======??IIII?+=,,..~=?I777IIII?+==::,~~~~==++????+++++====+?II?+++??++++????+=== \n======+????I??7~:.:.??I77I??II??+,:::::~~==++??????+++===++?II?+++??????????+=== \n======+++?????I7?=~,III77?+::=I?,.,,~,:~~==+++++?+++~~~=++??II??+=++????????+=== \n=======+????+?II77IIII77II~.:=I?:..~~::~~~====++++=~~=+==+???II??+~=++?+?++++=== \n=====+==++++==+?II77??I77I?I?7I?=..,~:~~~~~~~~===~~=~==~~=++????+=+~===++++===== \n======+=====++=+IIII7++????77I?+:.....:~~::::~:::::::,::,,::~~~::~~~::~~~~~~~=== \n=======+++====+?????II~~:II??++=......:~~::::::::::~:,,,,,,,,,,,,~~~:,,:::::~=== \n========++~?+=~==+++=~~=+??I=++,......,~~~:::::::::::,,,,,,,,,,,:~~~::,,:::~~=== \n================~~~:::::==+++==.,......:~~~~~~~::,.,,,,,,,,,,,::~~:::::::~~~==== \n==========+==~=~=~~~~~=~~=~====..,.....::~~~:~===~~~~::,,,,,,,:~~~~:~~~~~~~~==== \n==============~~~~~~~~~~===++=.,:.,.....:::~~~~=~==~~~~~~::::~=======~~~~~~===== \n===++========~~~~~~~~~~==++++=........,.,:::~~~~~~~~~~~~~~::~===~===~~:~::====== \n==+++++===+======~=~===+++++++,..,.....,,,::::~~~~~~~~~~~~~~~~~~===~=~:::======= \n=++++?+++++==========++?+????+~.....,...,,,:::~~~~~~~~~~~~~~=~======~::~======== \n==+++?++++++++==+++++????????+==,.......,,,,:::~~~~~======++++=====~~:========== \n+++++?+???+++++?++???????I???++~,....,,,,,,,,::~~~~~~~~===+++++++==~~=========== \n+++++????????+++???????IIII???++,....,,,,,,,,,,:~~~~~~~====++++++=~~============ \n++++????????????????????II?????+=:....,,,,,,,,,,::~~~~~~~~~===++==~============= \n+==++??????++??????????????II?+=:.....,,,,,,,,,,,,:::::::::~~===~=============== \n==++++????????????????????????+~,,....,,,,,,,,,,,,,,,:::::::::::=======~======== \n===++?+????+++++????++++++++++~,.....,,,,,,,,,,,,,,,,,,,::::::::~==========++=== \n===++++++++++++++++++++++++===~,.....,::,,,,,,,,,,,,,,,,:::::::::=============== \n==~~==+++++++=~======+++++=,,,,.....,:::,,,,,,,,,,,,,,,::::::::~:==~============ \n+++??+=~~=====????????????+:,.......:::::,,,,,,,,,,,,,,,:::::::~~~~~...,======== \n+?IIIII?~:,~IIIIIIIII???++=:,....:.~.,:::::,,,,,,,,:,,:::::::::~~~~=~=.......=== \nIIIIIII?=,?IIIIIIIIII??+=~.......+.....~:::::,,,,,,,,,,,:::::::~~~~====~,......= \nIIIIIIIIIIIIIIIIIII??+=:,...............,~:::,,,,,,,,,,::::::::~~~==~====~...... \nIIIIIIIIIIIIIIIIII??=......................=~:,,,,,,,,,:::::::::~====~===~:..... \nIIIII?IIIIIIIIIII?=:,.......................~~~:,:::,,,:::::::~~~=~======~~~.... \nIIIII????I?IIIII?:,........................~.~~~~:::::,::::~~~=~=======+===~,... \nIII?+??I+II????+:............................~~=~::::::::~~~~=~==============... \nI?+=,,+?????+I+,...........................:,~~==~:~::::~~~==========+=======...");
 	}
 
 	private void sendPublicMessage(String message)

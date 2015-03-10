@@ -31,7 +31,7 @@ public class ClientConnection
 	{
 		DatagramPacket packet = message.getPacket();
 		m_socket.send(packet);
-		ChatMessage chatMessage = new ChatMessage(m_serverAddress, m_serverPort, 6, m_name, getTimeStamp(), "", "");
+		ChatMessage chatMessage = new ChatMessage(m_serverAddress, m_serverPort, 0, m_name, getTimeStamp(), "", "");
 		m_writer.println(chatMessage.getString());
 	}
 
@@ -79,5 +79,11 @@ public class ClientConnection
 	public void closeSocket()
 	{
 		m_socket.close();
+	}
+	
+	// Fetch a time stamp
+	private long getTimeStamp()
+	{
+		return System.currentTimeMillis();
 	}
 }
