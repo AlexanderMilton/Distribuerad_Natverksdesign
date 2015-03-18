@@ -51,7 +51,7 @@ public class Server
 
 		//Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
-		Thread heartbeatHandler = new Thread(new HeartbeatThread());
+		//Thread heartbeatHandler = new Thread(new HeartbeatThread());
 //		Thread cartHandler = new Thread(new BringOutYerDeadThread());
 
 		//clientHandler.start();		// TODO: wat
@@ -158,8 +158,7 @@ public class Server
 				{
 					System.err.println("Error: failed to acquire criticalSection");
 					e.printStackTrace();
-				} 
-					catch (IOException e)
+				} catch (IOException e)
 				{
 					System.err.println("Error: IO Exception when receving message");
 					e.printStackTrace();
@@ -169,63 +168,63 @@ public class Server
 		}
 	}
 	
-	// Check the status of all connections
-	public class HeartbeatThread implements Runnable
-	{
-		@Override
-		public void run()
-		{			
-			while (true)
-			{
-				// Drain all available permits
-				secondBeat.drainPermits();
-				
-				// Heartbeat every few seconds
-				try
-				{
-					Thread.sleep(5000);
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to sleep");
-					e.printStackTrace();
-				}
-				
-				System.out.println("Sending heartbeat to clients");
-				
-				ClientConnection c;
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-				{
-					c = itr.next();
-
-					// Skip already disconnected clients
-					if (c.isDisconnected())
-						continue;
-					
-					try
-					{
-						// Send heartbeat and wait
-						c.sendHeartbeat();
-						
-						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
-						{
-							// No heartbeat received
-							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-							disconnect(c.getName());
-							continue;
-						}
-					} catch (InterruptedException e)
-					{
-						System.err.println("Error: heart skipped a beat");
-						e.printStackTrace();
-						continue;
-					}
-
-					// Second heartbeat acquired
-					System.out.println("Received heartbeat from " + c.getName());
-				}
-			}
-		}
-	}
+//	// Check the status of all connections
+//	public class HeartbeatThread implements Runnable
+//	{
+//		@Override
+//		public void run()
+//		{			
+//			while (true)
+//			{
+//				// Drain all available permits
+//				secondBeat.drainPermits();
+//				
+//				// Heartbeat every few seconds
+//				try
+//				{
+//					Thread.sleep(5000);
+//				} catch (InterruptedException e)
+//				{
+//					System.err.println("Error: failed to sleep");
+//					e.printStackTrace();
+//				}
+//				
+//				System.out.println("Sending heartbeat to clients");
+//				
+//				ClientConnection c;
+//				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+//				{
+//					c = itr.next();
+//
+//					// Skip already disconnected clients
+//					if (c.isDisconnected())
+//						continue;
+//					
+//					try
+//					{
+//						// Send heartbeat and wait
+//						c.sendHeartbeat();
+//						
+//						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
+//						{
+//							// No heartbeat received
+//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
+//							disconnect(c.getName());
+//							continue;
+//						}
+//					} catch (InterruptedException e)
+//					{
+//						System.err.println("Error: heart skipped a beat");
+//						e.printStackTrace();
+//						continue;
+//					}
+//
+//					// Second heartbeat acquired
+//					System.out.println("Received heartbeat from " + c.getName());
+//				}
+//			}
+//		}
+//	}
 
 //	// Remove disconnected clients
 //	public class BringOutYerDeadThread implements Runnable

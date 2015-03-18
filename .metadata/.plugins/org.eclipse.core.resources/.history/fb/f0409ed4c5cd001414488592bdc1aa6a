@@ -56,7 +56,7 @@ public class Server
 
 		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-//		heartbeatHandler.start();		// TODO: test, fix and start
+		heartbeatHandler.start();		// TODO: test, fix and start
 //		cartHandler.start();
 	}
 

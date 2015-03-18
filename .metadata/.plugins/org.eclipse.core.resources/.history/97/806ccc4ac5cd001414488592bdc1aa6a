@@ -56,7 +56,7 @@ public class Server
 
 		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-//		heartbeatHandler.start();		// TODO: test, fix and start
+		heartbeatHandler.start();		// TODO: test, fix and start
 //		cartHandler.start();
 	}
 
@@ -158,8 +158,7 @@ public class Server
 				{
 					System.err.println("Error: failed to acquire criticalSection");
 					e.printStackTrace();
-				} 
-					catch (IOException e)
+				} catch (IOException e)
 				{
 					System.err.println("Error: IO Exception when receving message");
 					e.printStackTrace();

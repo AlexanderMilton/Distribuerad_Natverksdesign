@@ -27,9 +27,6 @@ public class ServerConnection
 	private ArrayList<String> unacknowledged = new ArrayList<String>();
 	private boolean connected = false;
 
-//	private BufferedReader m_reader;
-//	private PrintWriter m_writer;
-
 	public ServerConnection(String hostName, int port, String name)
 	{
 		m_name = name;
@@ -38,9 +35,7 @@ public class ServerConnection
 		{
 			m_serverPort = port;
 			m_serverAddress = InetAddress.getByName(hostName);
-			m_socket = new DatagramSocket();//m_serverPort, m_serverAddress);
-//			m_writer = new PrintWriter(m_socket.getOutputStream(), true);
-//			m_reader = new BufferedReader(new InputStreamReader(m_socket.getInputStream()));
+			m_socket = new DatagramSocket();
 		} catch (UnknownHostException e)
 		{
 			System.err.println("Error: unknown host");
@@ -132,7 +127,7 @@ public class ServerConnection
 		// TODO: review method
 		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 6, m_name, getTimeStamp(), "_", "_");
 		System.out.println("Sending heartbeat");
-		send(message);
+		resendUntilAcknowledged(message);
 	}
 	
 	// 7 ACKNOWLEDGMENT
@@ -172,7 +167,7 @@ public class ServerConnection
 		{
 			try
 			{
-				m_socket.setSoTimeout(1000);
+				m_socket.setSoTimeout(200);
 				m_socket.send(message.getPacket());
 			} catch (SocketTimeoutException e)
 			{
@@ -196,7 +191,7 @@ public class ServerConnection
 
 		try
 		{
-			System.out.println("Receiving message...");
+//			System.out.println("Receiving message...");
 			m_socket.receive(packet);
 		} catch (SocketTimeoutException e)
 		{
@@ -210,20 +205,6 @@ public class ServerConnection
 		
 		// Construct a chat message from the received packet
 		chatMessage = new ChatMessage(packet);
-		
-		// TODO: handle acknowledgments and time stamps
-		
-		// Message already received	// TODO: figure this shit out down here
-//		if (acknowledgedTimeStamp == chatMessage.getTimeStamp())
-//		{
-//			System.out.println("Messaged already interpreted");
-//			return "";
-//		}
-//		else
-//		{
-//			// Update latest timestamp
-//			acknowledgedTimeStamp = chatMessage.getTimeStamp();
-//		}
 
 		switch(chatMessage.getType())
 		{
@@ -241,8 +222,6 @@ public class ServerConnection
 			break;
 		case 7:		// Acknowledgment
 			receiveAcknowledgment(chatMessage.getText());
-//			if (!connected)
-//				return chatMessage.getText();		// Hack to allow handshake acknowledgment
 			break;
 		default:	// Unknown type
 			System.err.println("Error: unknown message type: " + chatMessage.getType());

@@ -19,7 +19,6 @@ public class ChatMessage
 	private String 		m_parameter 	= null;
 	private String 		m_text 			= null;
 
-	// TODO: Reconsider including senderaddress and senderport
 	public ChatMessage(InetAddress address, int port, InetAddress senderAddress, int senderPort, int type, String sender, long timeStamp, String parameter, String text)
 	{
 		m_address	= address;

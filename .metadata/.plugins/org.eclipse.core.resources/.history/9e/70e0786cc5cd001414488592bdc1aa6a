@@ -56,7 +56,7 @@ public class Server
 
 		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-//		heartbeatHandler.start();		// TODO: test, fix and start
+		heartbeatHandler.start();		// TODO: test, fix and start
 //		cartHandler.start();
 	}
 
@@ -142,29 +142,28 @@ public class Server
 		{
 			while (true)
 			{
-				try
+//				try
 				{
-					criticalSection.acquire();
+//					criticalSection.acquire();
 					
 					byte[] buf = new byte[256];
 					DatagramPacket packet = new DatagramPacket(buf, buf.length);
 					m_socket.receive(packet);
 
-					criticalSection.release();
+//					criticalSection.release();
 					
 					handleMessage(new ChatMessage(packet));
 
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to acquire criticalSection");
-					e.printStackTrace();
-				} 
-					catch (IOException e)
-				{
-					System.err.println("Error: IO Exception when receving message");
-					e.printStackTrace();
-					System.exit(1);
-				}
+//				} catch (InterruptedException e)
+//				{
+//					System.err.println("Error: failed to acquire criticalSection");
+//					e.printStackTrace();
+//				} catch (IOException e)
+//				{
+//					System.err.println("Error: IO Exception when receving message");
+//					e.printStackTrace();
+//					System.exit(1);
+//				}
 			}
 		}
 	}

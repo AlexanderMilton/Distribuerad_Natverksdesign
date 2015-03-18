@@ -28,4 +28,5 @@
 <fullyQualifiedTypeName name="java.net.DatagramPacket"/>
 <fullyQualifiedTypeName name="UDPChat.Shared.ChatMessage"/>
 <fullyQualifiedTypeName name="java.net.InetAddress"/>
+<fullyQualifiedTypeName name="java.util.Vector"/>
 </qualifiedTypeNameHistroy>

@@ -56,7 +56,7 @@ public class Server
 
 		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-//		heartbeatHandler.start();		// TODO: test, fix and start
+		heartbeatHandler.start();		// TODO: test, fix and start
 //		cartHandler.start();
 	}
 
@@ -154,10 +154,10 @@ public class Server
 					
 					handleMessage(new ChatMessage(packet));
 
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to acquire criticalSection");
-					e.printStackTrace();
+//				} catch (InterruptedException e)
+//				{
+//					System.err.println("Error: failed to acquire criticalSection");
+//					e.printStackTrace();
 				} 
 					catch (IOException e)
 				{
