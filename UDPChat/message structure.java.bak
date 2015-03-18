@@ -21,8 +21,3 @@ public ChatMessage(InetAddress address, int port, int type, String sender, long 
 	String message = type + dl + sender + dl + timeStamp + dl + parameter + dl + text;
 	packet = new DatagramPacket(message.getBytes(), message.length(), address, port);
 }
-
-
-
---- CONNECTION PROCESS ---
-

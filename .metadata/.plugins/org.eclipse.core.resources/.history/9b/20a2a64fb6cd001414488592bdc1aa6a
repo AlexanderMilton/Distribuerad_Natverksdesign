@@ -330,8 +330,7 @@ public class Server
 	
 	private void connect(String sender, InetAddress address, int port)
 	{
-		ClientConnection newClient = new ClientConnection(sender, address, port);
-		ClientConnection c;
+		ClientConnection c = new ClientConnection(sender, address, port);
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{
 			c = itr.next();
@@ -349,8 +348,8 @@ public class Server
 		sendPublicMessage(sender + " joined the chat.");
 		
 		// Add client
-		m_connectedClients.add(newClient);
-		newClient.sendNameAcceptance();
+		m_connectedClients.add(c);
+		c.sendNameAcceptance();
 	}
 
 	private void disconnect(String sender)

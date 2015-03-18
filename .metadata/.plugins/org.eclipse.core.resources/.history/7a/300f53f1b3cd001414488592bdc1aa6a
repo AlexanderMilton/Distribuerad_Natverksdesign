@@ -241,8 +241,8 @@ public class ServerConnection
 			break;
 		case 7:		// Acknowledgment
 			receiveAcknowledgment(chatMessage.getText());
-//			if (!connected)
-//				return chatMessage.getText();		// Hack to allow handshake acknowledgment
+			if (!connected)
+				return chatMessage.getText();		// Hack to allow handshake acknowledgment
 			break;
 		default:	// Unknown type
 			System.err.println("Error: unknown message type: " + chatMessage.getType());
