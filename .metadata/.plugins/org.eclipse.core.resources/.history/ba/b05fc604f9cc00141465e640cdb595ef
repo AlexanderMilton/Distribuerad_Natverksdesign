@@ -1,0 +1,141 @@
+package UDPChat.Server;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+
+import UDPChat.Shared.ChatMessage;
+
+public class ClientConnection
+{
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
+
+	private boolean disconnected;
+	private final String m_name;
+	protected final InetAddress m_address;
+	private final int m_port;
+	private DatagramSocket m_socket = null;
+
+	public ClientConnection(String name, InetAddress address, int port)
+	{
+		disconnected = false;
+		m_name 		 = name;
+		m_address 	 = address;
+		m_port 		 = port;
+		
+		System.out.println("Created new ClientConnection with name " + m_name + ", address " + m_address + " and port " + m_port);
+		
+		try
+		{
+			m_socket = new DatagramSocket();
+		} catch (SocketException e)
+		{
+			System.err.println("Error: client " + m_name + " failed to create socket");
+			e.printStackTrace();
+		}
+	}
+
+	public void sendMessage(String message)
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 0, m_name, getTimeStamp(), "_", message);
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending packet to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public void sendHeartbeat()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 6, m_name, getTimeStamp(), "_", "wub");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending heartbeat to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public void sendNameRejection()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, getTimeStamp(), "_", "NAME");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending heartbeat to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public void sendNameAcceptance()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, getTimeStamp(), "_", "OK");
+			DatagramPacket packet = chatMessage.getPacket();
+			
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending acceptance to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public String getName()
+	{
+		return m_name;
+	}
+
+	public DatagramSocket getSocket()
+	{
+		return m_socket;
+	}
+
+	public boolean isDisconnected()
+	{
+		return disconnected;
+	}
+
+	// Check if the tested name matches this client (regardless of case and spaces)
+	public boolean hasName(String name)
+	{
+		String testName = name.trim().toLowerCase();
+		String clientName = getName().trim().toLowerCase();
+		return testName.equals(clientName);
+	}
+
+	// Mark connection as ready for deletion
+	public void markAsDisconnected()
+	{
+		disconnected = true;
+	}
+
+	// Close the connection socket
+	public void closeSocket()
+	{
+		m_socket.close();
+	}
+	
+	// Fetch a time stamp
+	private long getTimeStamp()
+	{
+		return System.currentTimeMillis();
+	}
+}

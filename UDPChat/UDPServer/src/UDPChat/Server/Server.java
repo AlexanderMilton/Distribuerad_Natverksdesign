@@ -1,9 +1,6 @@
 package UDPChat.Server;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,13 +51,13 @@ public class Server
 
 		//Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
-		Thread heartbeatHandler = new Thread(new HeartbeatThread());
-		Thread cartHandler = new Thread(new BringOutYerDeadThread());
+		//Thread heartbeatHandler = new Thread(new HeartbeatThread());
+//		Thread cartHandler = new Thread(new BringOutYerDeadThread());
 
-		clientHandler.start();
+		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-		heartbeatHandler.start();
-		cartHandler.start();
+//		heartbeatHandler.start();		// TODO: test, fix and start
+//		cartHandler.start();
 	}
 
 //	// Thread concurrently accepts incoming client connections
@@ -171,157 +168,188 @@ public class Server
 		}
 	}
 	
-	// Check the status of all connections
-	public class HeartbeatThread implements Runnable
-	{
-		@Override
-		public void run()
-		{			
-			while (true)
-			{
-				// Drain all available permits
-				secondBeat.drainPermits();
-				
-				// Heartbeat every few seconds
-				try
-				{
-					Thread.sleep(5000);
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: failed to sleep");
-					e.printStackTrace();
-				}
-				
-				System.out.println("Sending heartbeat to clients");
-				
-				ClientConnection c;
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-				{
-					c = itr.next();
+//	// Check the status of all connections
+//	public class HeartbeatThread implements Runnable
+//	{
+//		@Override
+//		public void run()
+//		{			
+//			while (true)
+//			{
+//				// Drain all available permits
+//				secondBeat.drainPermits();
+//				
+//				// Heartbeat every few seconds
+//				try
+//				{
+//					Thread.sleep(5000);
+//				} catch (InterruptedException e)
+//				{
+//					System.err.println("Error: failed to sleep");
+//					e.printStackTrace();
+//				}
+//				
+//				System.out.println("Sending heartbeat to clients");
+//				
+//				ClientConnection c;
+//				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+//				{
+//					c = itr.next();
+//
+//					// Skip already disconnected clients
+//					if (c.isDisconnected())
+//						continue;
+//					
+//					try
+//					{
+//						// Send heartbeat and wait
+//						c.sendHeartbeat();
+//						
+//						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
+//						{
+//							// No heartbeat received
+//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
+//							disconnect(c.getName());
+//							continue;
+//						}
+//					} catch (InterruptedException e)
+//					{
+//						System.err.println("Error: heart skipped a beat");
+//						e.printStackTrace();
+//						continue;
+//					}
+//
+//					// Second heartbeat acquired
+//					System.out.println("Received heartbeat from " + c.getName());
+//				}
+//			}
+//		}
+//	}
 
-					// Skip already disconnected clients
-					if (c.isDisconnected())
-						continue;
-					
-					try
-					{
-						// Send heartbeat and wait
-						c.sendHeartbeat();
-						
-						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
-						{
-							// No heartbeat received
-							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
-							disconnect(c.getName());
-							continue;
-						}
-					} catch (InterruptedException e)
-					{
-						System.err.println("Error: heart skipped a beat");
-						e.printStackTrace();
-						continue;
-					}
-
-					// Second heartbeat acquired
-					System.out.println("Received heartbeat from " + c.getName());
-				}
-			}
-		}
-	}
-
-	// Remove disconnected clients
-	public class BringOutYerDeadThread implements Runnable
-	{
-		@Override
-		public void run()
-		{
-			while (true)
-			{
-				try
-				{
-					// Sleep for a few seconds
-					Thread.sleep(1000);
-
-					// Skip if empty
-					if (m_connectedClients.isEmpty())
-						continue;
-
-					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
-					ClientConnection c;
-					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-					{
-						c = itr.next();
-						if (c.isDisconnected())
-						{
-							deadClients.add(c);
-						}
-					}
-
-					// Skip if empty
-					if (deadClients.isEmpty())
-						continue;
-
-					// Lock critical section
-					criticalSection.acquire();
-
-					// Remove clients
-					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
-					{
-						c = itr.next();
-						String name = c.getName();
-						m_connectedClients.remove(c);
-						sendPublicMessage(name + " disconnected");
-					}
-
-					// Release critical section
-					criticalSection.release();
-
-				} catch (InterruptedException e)
-				{
-					System.err.println("Error: disconnection handler thread interrupted");
-					e.printStackTrace();
-				}
-			}
-		}
-	}
+//	// Remove disconnected clients
+//	public class BringOutYerDeadThread implements Runnable
+//	{
+//		@Override
+//		public void run()
+//		{
+//			while (true)
+//			{
+//				try
+//				{
+//					// Sleep for a few seconds
+//					Thread.sleep(1000);
+//
+//					// Skip if empty
+//					if (m_connectedClients.isEmpty())
+//						continue;
+//
+//					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
+//					ClientConnection c;
+//					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+//					{
+//						c = itr.next();
+//						if (c.isDisconnected())
+//						{
+//							deadClients.add(c);
+//						}
+//					}
+//
+//					// Skip if empty
+//					if (deadClients.isEmpty())
+//						continue;
+//
+//					// Lock critical section
+//					criticalSection.acquire();
+//
+//					// Remove clients
+//					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
+//					{
+//						c = itr.next();
+//						String name = c.getName();
+//						m_connectedClients.remove(c);
+//						sendPublicMessage(name + " disconnected");
+//					}
+//
+//					// Release critical section
+//					criticalSection.release();
+//
+//				} catch (InterruptedException e)
+//				{
+//					System.err.println("Error: disconnection handler thread interrupted");
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+//	}
 
 	private void handleMessage(ChatMessage message)
 	{
-		switch (message.getType())
+
+		System.out.println("Handling message \"" + message.getText() + "\"");
+		
+		// TODO: Suggest we check if the specific sender has sent this message already. ack if that is the case. alternative is all clients doing all this all the time
+		// TODO: No idea what the above suggestion says, too drunk to ask, but Im gonna go ahead and send acks to received messages so they can stop sending messages
+		
+		// Acknowledges message and returns true if message has not already been handled
+		if(acknowledge(message.getSender(), message.getTimeStamp()))
 		{
-		case 1:		// "connect"
-			connect(message.getSender());
-			break;
+			switch (message.getType())
+			{
+			case 1:		// "connect"
+				connect(message.getSender(), message.getSenderAddress(), message.getSenderPort());
+				break;
 
-		case 2:		// "disconnect"
-			disconnect(message.getSender());
-			break;
+			case 2:		// "disconnect"
+				disconnect(message.getSender());
+				break;
 
-		case 3:		// "list"
-			list(message.getSender());
-			break;
+			case 3:		// "list"
+				list(message.getSender());
+				break;
 
-		case 4:		// "whisper"
-			whisper(message.getParameter(), message.getSender(), message.getText());
-			break;
-			
-		case 5:		// "broadcast"
-			broadcast(message.getSender(), message.getText());
-			break;
+			case 4:		// "whisper"
+				whisper(message.getParameter(), message.getSender(), message.getText());
+				break;
+				
+			case 5:		// "broadcast"
+				broadcast(message.getSender(), message.getText());
+				break;
 
-		case 6:		// "heartbeat"
-			secondBeat.release();
-			break;
+			case 6:		// "heartbeat"
+				secondBeat.release();
+				break;
 
-		default:
-			System.out.println("Unknown command received: " + message.getType());
-			break;
-		}
+			default:
+				System.out.println("Unknown command received: " + message.getType());
+				break;
+			}
+		}		
 	}
-
-	private void connect(String sender)
+	
+	
+	
+	private void connect(String sender, InetAddress address, int port)
 	{
-		// TODO
+		ClientConnection c = new ClientConnection(sender, address, port);
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			
+			// Check if name is available
+			if (c.hasName(sender))
+			{
+				c.sendNameRejection();
+				m_connectedClients.remove(c);
+				return;
+			}
+		}
+		
+		// Announce client joining
+		sendPublicMessage(sender + " joined the chat.");
+		
+		// Add client
+		m_connectedClients.add(c);
+		c.sendNameAcceptance();
 	}
 
 	private void disconnect(String sender)
@@ -357,9 +385,41 @@ public class Server
 	{
 		sendPublicMessage(sender + ": " + message);
 	}
-
+	
+	private boolean acknowledge(String sender, long timeStamp)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(sender))
+			{
+				if (c.getLatestMessage() < timeStamp)
+				{
+					// Message not handled
+					c.setLatestMessage(timeStamp);
+					c.sendAcknowledgment(timeStamp);
+					return true;
+				}
+				else
+				{
+					// Message already handled
+					c.sendAcknowledgment(timeStamp);
+					return false;
+				}
+			}
+		}
+		// Client not found
+		System.out.println("No added/present client to acknowledge");
+		return true;
+	}
+	
+	
+	
 	private void sendPublicMessage(String message)
 	{
+		System.out.println("Broadcasting to " + m_connectedClients.size() + " clients");
+		
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 		{

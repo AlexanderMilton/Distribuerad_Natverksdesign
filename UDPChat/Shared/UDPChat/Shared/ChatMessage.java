@@ -7,71 +7,102 @@ public class ChatMessage
 {
 	static String dl = "/"; // Delimiter
 	private byte[] buf = new byte[256];
-	private DatagramPacket packet = new DatagramPacket(buf, buf.length);
+	private DatagramPacket m_packet = new DatagramPacket(buf, buf.length);
 
-	private InetAddress address 	= null;
-	private int 		port 		= 0;
-	private int 		type 		= 0;
-	private String 		sender 		= null;
-	private long 		timeStamp	= 0;
-	private String 		parameter 	= null;
-	private String 		text 		= null;
+	private InetAddress m_address 		= null;
+	private int 		m_port 			= 0;
+	private InetAddress m_senderAddress = null;
+	private int			m_senderPort	= 0;
+	private int 		m_type 			= 0;
+	private String 		m_sender 		= null;
+	private long 		m_timeStamp		= 0;
+	private String 		m_parameter 	= null;
+	private String 		m_text 			= null;
 
-	public ChatMessage(InetAddress address, int port, int type, String sender, long timeStamp, String parameter, String text)
+	public ChatMessage(InetAddress address, int port, InetAddress senderAddress, int senderPort, int type, String sender, long timeStamp, String parameter, String text)
 	{
-		String message = type + dl + sender + dl + timeStamp + dl + parameter + dl + text;
-		packet = new DatagramPacket(message.getBytes(), message.length(), address, port);
+		m_address	= address;
+		m_port 		= port;
+		m_senderAddress = senderAddress;
+		m_senderPort 	= senderPort;
+		m_type 		= type;
+		m_sender 	= sender;
+		m_timeStamp	= timeStamp;
+		m_parameter = parameter;
+		m_text 		= text;
+
+		System.out.println("\nm_address " + m_address);
+		System.out.println("m_port " + m_port);
+		System.out.println("m_senderAddress " + m_senderAddress);
+		System.out.println("m_senderPort " + m_senderPort + "\n");
+		
+		String message = m_type + dl + m_sender + dl + m_timeStamp + dl + m_parameter + dl + m_text;
+		System.out.println("Built chat message: " + message);
+		m_packet = new DatagramPacket(message.getBytes(), message.length(), m_address, m_port);
 	}
 
 	public ChatMessage(DatagramPacket packet)
 	{
 		String message = new String(packet.getData(), 0, packet.getLength()).trim();
+		System.out.println("Deconstructed chat message: " + message);
 		String messageComponent[] = message.split(dl);
 		
-		type 		= Integer.parseInt(	messageComponent[0]);
-		sender 		= 					messageComponent[1];
-		timeStamp	= Long.parseLong(	messageComponent[2]);
-		parameter 	=					messageComponent[3];
-		text 		= 					messageComponent[4];
+		m_address 	= packet.getAddress();
+		m_port		= packet.getPort();
+		m_type 		= Integer.parseInt(	messageComponent[0]);
+		m_sender 	= 					messageComponent[1];
+		m_timeStamp	= Long.parseLong(	messageComponent[2]);
+		m_parameter =					messageComponent[3];
+		m_text 		= 					messageComponent[4];
 	}
 	
 	public InetAddress getAddress()
 	{
-		return address;
+		return m_address;
 	}
 	
 	public int getPort()
 	{
-		return port;
+		return m_port;
+	}
+	
+	public InetAddress getSenderAddress()
+	{
+		return m_address;
+	}
+	
+	public int getSenderPort()
+	{
+		return m_port;
 	}
 	
 	public DatagramPacket getPacket()
 	{
-		return packet;
+		return m_packet;
 	}
 
 	public int getType()
 	{
-		return type;
+		return m_type;
 	}
 
 	public String getSender()
 	{
-		return sender;
+		return m_sender;
 	}
 
 	public long getTimeStamp()
 	{
-		return timeStamp;
+		return m_timeStamp;
 	}
 
 	public String getParameter()
 	{
-		return parameter;
+		return m_parameter;
 	}
 
 	public String getText()
 	{
-		return text;
+		return m_text;
 	}
 }

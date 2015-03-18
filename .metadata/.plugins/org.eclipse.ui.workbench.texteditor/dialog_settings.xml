@@ -2,12 +2,13 @@
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="" key="selection"/>
+		<item value="&quot;_&quot;" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
+			<item value="&quot;&quot;"/>
 			<item value="TCP"/>
 			<item value="request"/>
 			<item value="TCPChat"/>
@@ -15,9 +16,9 @@
 			<item value="port number"/>
 			<item value="ACK"/>
 			<item value="%ACK%"/>
-			<item value="ack"/>
 		</list>
 		<list key="replacehistory">
+			<item value="&quot;_&quot;"/>
 			<item value=""/>
 			<item value="UDPChat"/>
 			<item value="criticalSection"/>
@@ -25,7 +26,6 @@
 			<item value="m_socket"/>
 			<item value="acknowledgment"/>
 			<item value="getName"/>
-			<item value="m_clientSocket"/>
 		</list>
 	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">

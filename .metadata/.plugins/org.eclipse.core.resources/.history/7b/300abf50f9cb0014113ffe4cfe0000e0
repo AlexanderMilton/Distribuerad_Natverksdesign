@@ -1,0 +1,110 @@
+package UDPChat.Server;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+
+import UDPChat.Shared.ChatMessage;
+
+public class ClientConnection
+{
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
+
+	private boolean disconnected;
+	private final String m_name;
+	private final InetAddress m_address;
+	private final int m_port;
+	private final DatagramSocket m_socket;
+//	private PrintWriter m_writer;
+//	private BufferedReader m_reader;
+
+	public ClientConnection(String name, InetAddress address, int port)
+	{
+		disconnected 	= false;
+		m_name 			= name;
+		m_address 		= address;
+		m_port 			= port;
+		
+		try
+		{
+			m_socket 		= new DatagramSocket(m_port);
+		} catch (SocketException e)
+		{
+			System.err.println("Error: client " + m_name + " failed to create socket");
+			e.printStackTrace();
+		}
+	}
+
+	public void sendMessage(String message)
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_socket.getInetAddress(), m_socket.getPort(), 0, m_name, getTimeStamp(), "", "");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending packet to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public void sendHeartbeat()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_socket.getInetAddress(), m_socket.getPort(), 6, m_name, getTimeStamp(), "", "");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending heartbeat to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public String getName()
+	{
+		return m_name;
+	}
+
+	public DatagramSocket getSocket()
+	{
+		return m_socket;
+	}
+
+	public boolean isDisconnected()
+	{
+		return disconnected;
+	}
+
+	// Check if the tested name matches this client (regardless of case and spaces)
+	public boolean hasName(String name)
+	{
+		String testName = name.trim().toLowerCase();
+		String clientName = getName().trim().toLowerCase();
+		return testName.equals(clientName);
+	}
+
+	// Mark connection as ready for deletion
+	public void markAsDisconnected()
+	{
+		disconnected = true;
+	}
+
+	// Close the connection socket
+	public void closeSocket()
+	{
+		m_socket.close();
+	}
+	
+	// Fetch a time stamp
+	private long getTimeStamp()
+	{
+		return System.currentTimeMillis();
+	}
+}

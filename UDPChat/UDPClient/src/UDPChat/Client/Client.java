@@ -57,6 +57,7 @@ public class Client implements ActionListener
 		{
 			System.err.println("Error: IO exception when conencting to server");
 			e.printStackTrace();
+			System.exit(0);
 		}
 	}
 

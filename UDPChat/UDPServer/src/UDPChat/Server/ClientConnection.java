@@ -1,12 +1,10 @@
 package UDPChat.Server;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
+import java.net.InetAddress;
+import java.net.SocketException;
 
 import UDPChat.Shared.ChatMessage;
 
@@ -16,29 +14,103 @@ public class ClientConnection
 
 	private boolean disconnected;
 	private final String m_name;
-	private final DatagramSocket m_socket;
-//	private PrintWriter m_writer;
-//	private BufferedReader m_reader;
+	protected final InetAddress m_address;
+	private final int m_port;
+	private DatagramSocket m_socket = null;
+	private long m_latestMessage = 0;
 
-	public ClientConnection(String name, DatagramSocket socket)
+	public ClientConnection(String name, InetAddress address, int port)
 	{
-		m_name = name;
-		m_socket = socket;
 		disconnected = false;
+		m_name 		 = name;
+		m_address 	 = address;
+		m_port 		 = port;
+		
+		System.out.println("Created new ClientConnection with name " + m_name + ", address " + m_address + " and port " + m_port);
+		
+		try
+		{
+			m_socket = new DatagramSocket();
+		} catch (SocketException e)
+		{
+			System.err.println("Error: client " + m_name + " failed to create socket");
+			e.printStackTrace();
+		}
 	}
 
-	public void sendMessage(ChatMessage message)
+	public void sendMessage(String message)
 	{
-		DatagramPacket packet = message.getPacket();
-		m_socket.send(packet);
-		ChatMessage chatMessage = new ChatMessage(m_serverAddress, m_serverPort, 0, m_name, getTimeStamp(), "", "");
-		m_writer.println(chatMessage.getString());
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 5, m_name, getTimeStamp(), "_", message);
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending packet to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
 	}
 
 	public void sendHeartbeat()
 	{
-		ChatMessage chatMessage = new ChatMessage("", "heartbeat", "", "");
-		m_writer.println(chatMessage.getString());
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 6, m_name, getTimeStamp(), "_", "wub");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending heartbeat to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public void sendNameRejection()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, getTimeStamp(), "_", "NAME");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending heartbeat to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public void sendNameAcceptance()
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, getTimeStamp(), "_", "OK");
+			DatagramPacket packet = chatMessage.getPacket();
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending acceptance to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public void sendAcknowledgment(long timeStamp)
+	{
+		try
+		{
+			ChatMessage chatMessage = new ChatMessage(m_address, m_port, m_socket.getLocalAddress(), m_socket.getLocalPort(), 7, m_name, getTimeStamp(), "_", Long.toString(timeStamp));
+			DatagramPacket packet = chatMessage.getPacket();			
+			m_socket.send(packet);
+		} catch (IOException e)
+		{
+			System.err.println("Error: IO exception sending acknowledgment to client: " + m_name);
+			e.printStackTrace();
+			System.exit(1);
+		}
 	}
 
 	public String getName()
@@ -49,11 +121,6 @@ public class ClientConnection
 	public DatagramSocket getSocket()
 	{
 		return m_socket;
-	}
-
-	public BufferedReader getReader()
-	{
-		return m_reader;
 	}
 
 	public boolean isDisconnected()
@@ -85,5 +152,15 @@ public class ClientConnection
 	private long getTimeStamp()
 	{
 		return System.currentTimeMillis();
+	}
+
+	public long getLatestMessage()
+	{
+		return m_latestMessage;
+	}
+
+	public void setLatestMessage(long latestMessage)
+	{
+		m_latestMessage = latestMessage;
 	}
 }
