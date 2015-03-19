@@ -127,7 +127,7 @@ public class ServerConnection
 		// TODO: review method
 		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 6, m_name, getTimeStamp(), "_", "_");
 		System.out.println("Sending heartbeat");
-		send(message);
+		resendUntilAcknowledged(message);
 	}
 	
 	// 7 ACKNOWLEDGMENT

@@ -13,7 +13,6 @@ public class ClientConnection
 	static double TRANSMISSION_FAILURE_RATE = 0.3;
 
 	private boolean disconnected;
-	private int pulseCounter = 10;
 	private final String m_name;
 	protected final InetAddress m_address;
 	private final int m_port;
@@ -163,20 +162,5 @@ public class ClientConnection
 	public void setLatestMessage(long latestMessage)
 	{
 		m_latestMessage = latestMessage;
-	}
-
-	public int getPulseCounter()
-	{
-		return pulseCounter;
-	}
-
-	public void decrementPulseCounter()
-	{
-		pulseCounter -= 1;
-	}
-
-	public void resetPulseCounter()
-	{
-		pulseCounter = 10;
 	}
 }

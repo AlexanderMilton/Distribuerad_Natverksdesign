@@ -56,7 +56,7 @@ public class Server
 
 		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-		heartbeatHandler.start();		// TODO: test, fix and start
+//		heartbeatHandler.start();		// TODO: test, fix and start
 //		cartHandler.start();
 	}
 
@@ -209,15 +209,9 @@ public class Server
 						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
 						{
 							// No heartbeat received
-							System.out.println("Failed to receive heartbeat from " + c.getName());
-							c.decrementPulseCounter();
-							
-							// Client can survive 10 missed beats before being disconnected
-							if (c.getPulseCounter() <= 0)
-							{
-								disconnect(c.getName());
-								continue;
-							}
+							System.out.println("Failed to receive heartbeat from " + c.getName() + ", disconneting");
+							disconnect(c.getName());
+							continue;
 						}
 					} catch (InterruptedException e)
 					{
@@ -228,7 +222,6 @@ public class Server
 
 					// Second heartbeat acquired
 					System.out.println("Received heartbeat from " + c.getName());
-					c.resetPulseCounter();
 				}
 			}
 		}

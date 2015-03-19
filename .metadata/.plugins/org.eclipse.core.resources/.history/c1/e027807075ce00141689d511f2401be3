@@ -213,7 +213,7 @@ public class Server
 							c.decrementPulseCounter();
 							
 							// Client can survive 10 missed beats before being disconnected
-							if (c.getPulseCounter() <= 0)
+							//if (c.getPulseCounter() <= 0)
 							{
 								disconnect(c.getName());
 								continue;
