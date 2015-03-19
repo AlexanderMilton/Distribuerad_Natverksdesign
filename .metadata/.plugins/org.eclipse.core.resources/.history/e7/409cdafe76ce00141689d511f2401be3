@@ -190,14 +190,12 @@ public class Server
 					e.printStackTrace();
 				}
 				
-				System.out.println("Sending heartbeat to all clients");
-				
-				// Check if array list is empty
+				System.out.println("Sending heartbeat to clients");
 				
 				ClientConnection c;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 				{
-					c = itr.next();		// TODO: This causes concurrent modification exceptimust likely be secured behind semaphore
+					c = itr.next();
 
 					// Skip already disconnected clients
 					if (c.isDisconnected())
@@ -211,14 +209,12 @@ public class Server
 						if(!secondBeat.tryAcquire(2000, TimeUnit.MILLISECONDS))
 						{
 							// No heartbeat received
-//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
+							System.out.println("Failed to receive heartbeat from " + c.getName());
 							c.decrementPulseCounter();
 							
 							// Client can survive 10 missed beats before being disconnected
 							if (c.getPulseCounter() <= 0)
 							{
-								// No response for 10 beats
-								System.out.println(c.getName() + " missing pulse, disconnecting");
 								disconnect(c.getName());
 								continue;
 							}
@@ -232,7 +228,7 @@ public class Server
 						}
 					} catch (InterruptedException e)
 					{
-						System.err.println("Error: IO exception - heart skipped a beat");
+						System.err.println("Error: heart skipped a beat");
 						e.printStackTrace();
 						continue;
 					}

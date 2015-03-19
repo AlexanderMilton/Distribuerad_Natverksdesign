@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Random;
 
 import UDPChat.Shared.ChatMessage;
@@ -22,9 +23,9 @@ public class ServerConnection
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
 	private long acknowledgedTimeStamp = 0;
-
-//	private BufferedReader m_reader;
-//	private PrintWriter m_writer;
+	
+	private ArrayList<String> unacknowledged = new ArrayList<String>();
+	private boolean connected = false;
 
 	public ServerConnection(String hostName, int port, String name)
 	{
@@ -34,9 +35,7 @@ public class ServerConnection
 		{
 			m_serverPort = port;
 			m_serverAddress = InetAddress.getByName(hostName);
-			m_socket = new DatagramSocket();//m_serverPort, m_serverAddress);
-//			m_writer = new PrintWriter(m_socket.getOutputStream(), true);
-//			m_reader = new BufferedReader(new InputStreamReader(m_socket.getInputStream()));
+			m_socket = new DatagramSocket();
 		} catch (UnknownHostException e)
 		{
 			System.err.println("Error: unknown host");
@@ -58,32 +57,21 @@ public class ServerConnection
 	{
 		long timeStamp = getTimeStamp();
 
-		while (true)
+		while (!connected)
 		{
 			// Send request
 			ChatMessage connectionRequest = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, timeStamp, "_", "_");
 			send(connectionRequest);
 			System.out.println("Sending connection request...");
-
-			// Receive response
-			byte[] buf = new byte[256];
-			DatagramPacket received = new DatagramPacket(buf, buf.length);
-			m_socket.receive(received);
-
-			// Parse response
-			connectionRequest = new ChatMessage(received);
-			String response = connectionRequest.getText();
-
-			// If a heartbeat is received before acknowledgment, simply respond to it
-			if (connectionRequest.getType() == 6)
-			{
-				//TODO: reinstall -> heartbeat();
-			}
+			
+			// Use the receive method once to receive a handshake response
+			String response = receiveChatMessage();
 
 			if (response.equals("OK"))
 			{
 				// Connection approved
 				System.out.println("Connection approved by server");
+				connected = true;
 				return true;
 			} else if (response.equals("NAME"))
 			{
@@ -98,6 +86,7 @@ public class ServerConnection
 				return false;
 			}
 		}
+		return false;
 	}
 
 	// 2 DISCONNECT
@@ -140,15 +129,25 @@ public class ServerConnection
 		System.out.println("Sending heartbeat");
 		send(message);
 	}
+	
+	// 7 ACKNOWLEDGMENT
+	private void sendAcknowledgment()
+	{
+		// TODO: send(chatmessage with type 7)
+	}
 
 	public void resendUntilAcknowledged(ChatMessage message)
 	{
+		String ts = Long.toString(message.getTimeStamp());
+		unacknowledged.add(ts);
+		
 		for (int i = MAX_ATTEMPTS; i > 0; i--)
 		{
 			send(message);
-			// TODO: Figure out what on earth i was thinking
-			if (message.getTimeStamp() <= acknowledgedTimeStamp)
+		
+			if (!unacknowledged.contains(ts))
 			{
+				// Time stamp no longer present, message successfully sent
 				return;
 			}
 		}
@@ -168,7 +167,7 @@ public class ServerConnection
 		{
 			try
 			{
-				m_socket.setSoTimeout(1000);
+				m_socket.setSoTimeout(200);
 				m_socket.send(message.getPacket());
 			} catch (SocketTimeoutException e)
 			{
@@ -192,8 +191,12 @@ public class ServerConnection
 
 		try
 		{
-			System.out.println("Receiving message...");
+//			System.out.println("Receiving message...");
 			m_socket.receive(packet);
+		} catch (SocketTimeoutException e)
+		{
+			// Socket timed out, reiterating
+			return "";
 		} catch (IOException e)
 		{
 			System.err.println("Error: IO exception, failed to receive message");
@@ -202,17 +205,6 @@ public class ServerConnection
 		
 		// Construct a chat message from the received packet
 		chatMessage = new ChatMessage(packet);
-		
-		// TODO: handle acknowledgments and time stamps
-		
-//		// Message already received
-//		if (acknowledgedTimeStamp == chatMessage.getTimeStamp());
-//		{
-//			
-//		}
-		
-		// Update latest timestamp
-		acknowledgedTimeStamp = chatMessage.getTimeStamp();
 
 		switch(chatMessage.getType())
 		{
@@ -228,16 +220,27 @@ public class ServerConnection
 		case 6:		// Heartbeat
 			heartbeat();
 			break;
+		case 7:		// Acknowledgment
+			receiveAcknowledgment(chatMessage.getText());
+			break;
 		default:	// Unknown type
 			System.err.println("Error: unknown message type: " + chatMessage.getType());
 			break;
 		}
 		
-		return "_";
+		return "";
 	}
 
 	private long getTimeStamp()
 	{
 		return System.currentTimeMillis();
+	}
+	
+	private void receiveAcknowledgment(String timeStamp)
+	{
+		if (unacknowledged.contains(timeStamp))
+		{
+			unacknowledged.remove(timeStamp);
+		}
 	}
 }

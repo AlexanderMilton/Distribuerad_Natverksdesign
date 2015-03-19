@@ -32,20 +32,20 @@ public class ChatMessage
 		m_parameter = parameter;
 		m_text 		= text;
 
-//		System.out.println("\nm_address " + m_address);
-//		System.out.println("m_port " + m_port);
-//		System.out.println("m_senderAddress " + m_senderAddress);
-//		System.out.println("m_senderPort " + m_senderPort + "\n");
+		System.out.println("\nm_address " + m_address);
+		System.out.println("m_port " + m_port);
+		System.out.println("m_senderAddress " + m_senderAddress);
+		System.out.println("m_senderPort " + m_senderPort + "\n");
 		
 		String message = m_type + dl + m_sender + dl + m_timeStamp + dl + m_parameter + dl + m_text;
-//		System.out.println("Built chat message: " + message);
+		System.out.println("Built chat message: " + message);
 		m_packet = new DatagramPacket(message.getBytes(), message.length(), m_address, m_port);
 	}
 
 	public ChatMessage(DatagramPacket packet)
 	{
 		String message = new String(packet.getData(), 0, packet.getLength()).trim();
-//		System.out.println("Deconstructed chat message: " + message);
+		System.out.println("Deconstructed chat message: " + message);
 		String messageComponent[] = message.split(dl);
 		
 		m_address 	= packet.getAddress();

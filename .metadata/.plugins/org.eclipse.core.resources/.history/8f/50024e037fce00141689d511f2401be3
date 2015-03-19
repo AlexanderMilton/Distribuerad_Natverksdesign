@@ -192,12 +192,13 @@ public class Server
 				
 				System.out.println("Sending heartbeat to all clients");
 				
-				// Check if array list is empty
+				if (m_connectedClients.isEmpty())
+					continue;
 				
 				ClientConnection c;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 				{
-					c = itr.next();		// TODO: This causes concurrent modification exceptimust likely be secured behind semaphore
+					c = itr.next();
 
 					// Skip already disconnected clients
 					if (c.isDisconnected())

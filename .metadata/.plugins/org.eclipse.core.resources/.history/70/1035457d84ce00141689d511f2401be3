@@ -197,7 +197,7 @@ public class Server
 				ClientConnection c;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 				{
-					c = itr.next();		// TODO: This causes concurrent modification exceptimust likely be secured behind semaphore
+					c = itr.next();
 
 					// Skip already disconnected clients
 					if (c.isDisconnected())

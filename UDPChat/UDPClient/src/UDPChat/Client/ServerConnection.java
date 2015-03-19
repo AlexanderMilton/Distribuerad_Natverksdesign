@@ -130,11 +130,11 @@ public class ServerConnection
 		send(message);
 	}
 	
-	// 7 ACKNOWLEDGMENT
-	private void sendAcknowledgment()
-	{
-		// TODO: send(chatmessage with type 7)
-	}
+//	// 7 ACKNOWLEDGMENT
+//	private void sendAcknowledgment()
+//	{
+//		// TODO: send(chatmessage with type 7)
+//	}
 
 	public void resendUntilAcknowledged(ChatMessage message)
 	{
