@@ -9,7 +9,6 @@ import UDPChat.Client.ServerConnection;
 
 public class Client implements ActionListener
 {
-	static String DELIMIT = "|";
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
@@ -55,9 +54,9 @@ public class Client implements ActionListener
 			}
 		} catch (IOException e)
 		{
-			System.err.println("Error: IO exception when conencting to server");
+			System.err.println("Error: IO exception when connecting to server");
 			e.printStackTrace();
-			System.exit(0);
+			System.exit(1);
 		}
 	}
 

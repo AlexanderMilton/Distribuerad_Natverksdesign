@@ -1,0 +1,376 @@
+package UDPChat.Server;
+
+import java.io.IOException;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import UDPChat.Shared.ChatMessage;
+
+public class Server
+{
+	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
+	private DatagramSocket m_socket;
+	private int m_port = -1;
+	private Semaphore criticalSection = new Semaphore(1, true);
+	private Semaphore secondBeat = new Semaphore(1, true);
+
+	public static void main(String[] args)
+	{
+		if (args.length < 1)
+		{
+			System.err.println("Usage: java Server portnumber");
+			System.exit(-1);
+		}
+		try
+		{
+			@SuppressWarnings("unused")
+			Server instance = new Server(Integer.parseInt(args[0]));
+		} catch (NumberFormatException e)
+		{
+			System.err.println("Error: port number must be an integer.");
+			System.exit(-1);
+		} catch (IOException e)
+		{
+			System.err.println("Error: failed to create server socket");
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	private Server(int portNumber) throws IOException
+	{
+		m_port = portNumber;
+		m_socket = new DatagramSocket(m_port);
+		
+		System.out.println("Server successfully started at port " + m_port);
+
+		secondBeat.drainPermits();
+
+		Thread messageHandler = new Thread(new ClientMessageThread());
+		Thread heartbeatHandler = new Thread(new HeartbeatThread());
+		Thread cartHandler = new Thread(new BringOutYerDeadThread());
+
+		messageHandler.start();
+		heartbeatHandler.start();
+		cartHandler.start();
+	}
+
+	// Thread handling incoming client messages
+	private class ClientMessageThread implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			while (true)
+			{
+				try
+				{
+					criticalSection.acquire();
+					
+					byte[] buf = new byte[256];
+					DatagramPacket packet = new DatagramPacket(buf, buf.length);
+					m_socket.receive(packet);
+
+					criticalSection.release();
+					
+					handleMessage(new ChatMessage(packet));
+
+				} catch (InterruptedException e)
+				{
+					System.err.println("Error: failed to acquire criticalSection");
+					e.printStackTrace();
+				} 
+					catch (IOException e)
+				{
+					System.err.println("Error: IO Exception when receving message");
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}
+		}
+	}
+	
+	// Check the status of all connections
+	public class HeartbeatThread implements Runnable
+	{
+		@Override
+		public void run()
+		{			
+			while (true)
+			{
+				// Drain all available permits
+				secondBeat.drainPermits();
+				
+				// Heartbeat every few seconds
+				try
+				{
+					Thread.sleep(250);
+				} catch (InterruptedException e)
+				{
+					System.err.println("Error: failed to sleep");
+					e.printStackTrace();
+				}
+				
+				// Check if array list is empty
+				if (m_connectedClients.isEmpty())
+					continue;
+				
+				ClientConnection c;
+				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+				{
+					c = itr.next();
+
+					// Skip already disconnected clients
+					if (c.isDisconnected())
+						continue;
+					
+					try
+					{
+						// Send heartbeat and wait
+						c.sendHeartbeat();
+						
+						if(!secondBeat.tryAcquire(250, TimeUnit.MILLISECONDS))
+						{
+							// No heartbeat received
+							System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
+							c.decrementPulseCounter();
+							
+							// Client can survive 10 missed beats before being disconnected
+							if (c.getPulseCounter() <= 0)
+							{
+								// No response for 10 beats
+								System.out.println(c.getName() + " has no pulse, disconnecting");
+								disconnect(c.getName());
+								continue;
+							}
+						}
+						else
+						{
+							// Second heartbeat acquired
+							c.resetPulseCounter();
+							continue;
+						}
+					} catch (InterruptedException e)
+					{
+						System.err.println("Error: heart skipped a beat");
+						e.printStackTrace();
+						continue;
+					}
+				}
+			}
+		}
+	}
+
+	// Remove disconnected clients
+	public class BringOutYerDeadThread implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			while (true)
+			{
+				try
+				{
+					// Sleep for a few seconds
+					Thread.sleep(1000);
+
+					// Skip if empty
+					if (m_connectedClients.isEmpty())
+						continue;
+
+					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
+					ClientConnection c;
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						if (c.isDisconnected())
+						{
+							deadClients.add(c);
+						}
+					}
+
+					// Skip if empty
+					if (deadClients.isEmpty())
+						continue;
+
+					// Lock critical section
+					criticalSection.acquire();
+
+					// Remove clients
+					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						String name = c.getName();
+						m_connectedClients.remove(c);
+						sendPublicMessage(name + " disconnected");
+					}
+
+					// Release critical section
+					criticalSection.release();
+
+				} catch (InterruptedException e)
+				{
+					System.err.println("Error: disconnection handler thread interrupted");
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private void handleMessage(ChatMessage message)
+	{	
+		// Acknowledges message and returns true if message has not already been handled
+		if(acknowledge(message.getSender(), message.getTimeStamp()))
+		{
+			switch (message.getType())
+			{
+			case 1:		// "connect"
+				connect(message.getSender(), message.getAddress(), message.getPort());
+				break;
+
+			case 2:		// "disconnect"
+				disconnect(message.getSender());
+				break;
+
+			case 3:		// "list"
+				list(message.getSender());
+				break;
+
+			case 4:		// "whisper"
+				whisper(message.getParameter(), message.getSender(), message.getText());
+				break;
+				
+			case 5:		// "broadcast"
+				broadcast(message.getSender(), message.getText());
+				break;
+
+			case 6:		// "heartbeat"
+				secondBeat.release();
+				break;
+
+			default:
+				System.out.println("Unknown command received: " + message.getType());
+				break;
+			}
+		}		
+	}
+	
+	
+	
+	private void connect(String sender, InetAddress address, int port)
+	{
+		ClientConnection newClient = new ClientConnection(sender, address, port);
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			
+			// Check if name is available
+			if (c.hasName(sender))
+			{
+				c.sendNameRejection();
+				m_connectedClients.remove(c);
+				return;
+			}
+		}
+		
+		// Announce client joining
+		sendPublicMessage(sender + " joined the chat.");
+		
+		// Add client
+		m_connectedClients.add(newClient);
+		newClient.sendNameAcceptance();
+	}
+
+	private void disconnect(String sender)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(sender))
+			{
+//				sendPrivateMessage(sender, "You have been disconnected");
+				c.markAsDisconnected();
+			}
+		}
+	}
+
+	private void list(String sender)
+	{
+		String list = "[List of all active clients]";
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			list += ("\n> " + itr.next().getName());
+		}
+		sendPrivateMessage(sender, list);
+	}
+
+	private void whisper(String recepient, String sender, String message)
+	{
+		sendPrivateMessage(recepient, sender + " whispers: " + message);
+	}
+
+	private void broadcast(String sender, String message)
+	{
+		sendPublicMessage(sender + ": " + message);
+	}
+	
+	private boolean acknowledge(String sender, long timeStamp)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(sender))
+			{
+				if (c.getLatestMessage() < timeStamp)
+				{
+					// Message not handled
+					c.setLatestMessage(timeStamp);
+					c.sendAcknowledgment(timeStamp);
+					return true;
+				}
+				else
+				{
+					// Message already handled
+					c.sendAcknowledgment(timeStamp);
+					return false;
+				}
+			}
+		}
+		// Client not found
+		System.out.println("No added/present client to acknowledge");
+		return true;
+	}
+	
+	
+	
+	private void sendPublicMessage(String message)
+	{
+		System.out.println("Broadcasting to " + m_connectedClients.size() + " clients");
+		
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			c.sendMessage(message);
+		}
+	}
+
+	private void sendPrivateMessage(String recepient, String message)
+	{
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+		{
+			c = itr.next();
+			if (c.hasName(recepient))
+			{
+				c.sendMessage(message);
+			}
+		}
+	}
+}

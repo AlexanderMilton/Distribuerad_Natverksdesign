@@ -22,7 +22,6 @@ public class ServerConnection
 	private DatagramSocket m_socket = null;
 	private int m_serverPort = -1;
 	private InetAddress m_serverAddress = null;
-	private long acknowledgedTimeStamp = 0;
 	
 	private ArrayList<String> unacknowledged = new ArrayList<String>();
 	private boolean connected = false;
@@ -60,7 +59,7 @@ public class ServerConnection
 		while (!connected)
 		{
 			// Send request
-			ChatMessage connectionRequest = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 1, m_name, timeStamp, "_", "_");
+			ChatMessage connectionRequest = new ChatMessage(m_serverAddress, m_serverPort, 1, m_name, timeStamp, "_", "_");
 			send(connectionRequest);
 			System.out.println("Sending connection request...");
 			
@@ -82,7 +81,7 @@ public class ServerConnection
 			{
 				// Unknown response
 				System.err.println("Error: unknown connection response: " + response);
-				System.exit(1);
+//				System.exit(1);
 				return false;
 			}
 		}
@@ -92,7 +91,7 @@ public class ServerConnection
 	// 2 DISCONNECT
 	public void disconnect()
 	{
-		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 2, m_name, getTimeStamp(), "_", "_");
+		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, 2, m_name, getTimeStamp(), "_", "_");
 		System.out.println("Sending disconnect request");
 		resendUntilAcknowledged(message);
 	}
@@ -100,7 +99,7 @@ public class ServerConnection
 	// 3 LIST
 	public void list()
 	{
-		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 3, m_name, getTimeStamp(), "_", "_");
+		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, 3, m_name, getTimeStamp(), "_", "_");
 		System.out.println("Sending user list request");
 		resendUntilAcknowledged(message);
 	}
@@ -108,7 +107,7 @@ public class ServerConnection
 	// 4 WHISPER
 	public void whisper(String recepient, String msg)
 	{
-		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 4, m_name, getTimeStamp(), recepient, msg);
+		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, 4, m_name, getTimeStamp(), recepient, msg);
 		System.out.println("Sending whisper to " + recepient);
 		resendUntilAcknowledged(message);
 	}
@@ -116,25 +115,18 @@ public class ServerConnection
 	// 5 BROADCAST
 	public void broadcast(String msg)
 	{
-		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 5, m_name, getTimeStamp(), "_", msg);
-		System.out.println("Sending broadcast");	// TODO: This is how far the message has reached
+		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, 5, m_name, getTimeStamp(), "_", msg);
+		System.out.println("Sending broadcast");
 		resendUntilAcknowledged(message);
 	}
 
 	// 6 HEARTBEAT
 	private void heartbeat()
 	{
-		// TODO: review method
-		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, m_socket.getLocalAddress(), m_socket.getLocalPort(), 6, m_name, getTimeStamp(), "_", "_");
+		ChatMessage message = new ChatMessage(m_serverAddress, m_serverPort, 6, m_name, getTimeStamp(), "_", "_");
 		System.out.println("Sending heartbeat");
 		send(message);
 	}
-	
-//	// 7 ACKNOWLEDGMENT
-//	private void sendAcknowledgment()
-//	{
-//		// TODO: send(chatmessage with type 7)
-//	}
 
 	public void resendUntilAcknowledged(ChatMessage message)
 	{

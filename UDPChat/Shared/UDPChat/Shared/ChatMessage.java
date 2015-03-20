@@ -5,47 +5,37 @@ import java.net.InetAddress;
 
 public class ChatMessage
 {
-	static String dl = "/"; // Delimiter
+	static String dl = "/"; 	// Delimiter
 	private byte[] buf = new byte[256];
 	private DatagramPacket m_packet = new DatagramPacket(buf, buf.length);
 
 	private InetAddress m_address 		= null;
 	private int 		m_port 			= 0;
-	private InetAddress m_senderAddress = null;
-	private int			m_senderPort	= 0;
 	private int 		m_type 			= 0;
 	private String 		m_sender 		= null;
 	private long 		m_timeStamp		= 0;
 	private String 		m_parameter 	= null;
 	private String 		m_text 			= null;
 
-	// TODO: Reconsider including senderaddress and senderport
-	public ChatMessage(InetAddress address, int port, InetAddress senderAddress, int senderPort, int type, String sender, long timeStamp, String parameter, String text)
+	public ChatMessage(InetAddress address, int port, int type, String sender, long timeStamp, String parameter, String text)
 	{
 		m_address	= address;
 		m_port 		= port;
-		m_senderAddress = senderAddress;
-		m_senderPort 	= senderPort;
 		m_type 		= type;
 		m_sender 	= sender;
 		m_timeStamp	= timeStamp;
 		m_parameter = parameter;
 		m_text 		= text;
-
-//		System.out.println("\nm_address " + m_address);
-//		System.out.println("m_port " + m_port);
-//		System.out.println("m_senderAddress " + m_senderAddress);
-//		System.out.println("m_senderPort " + m_senderPort + "\n");
 		
 		String message = m_type + dl + m_sender + dl + m_timeStamp + dl + m_parameter + dl + m_text;
-//		System.out.println("Built chat message: " + message);
+		System.out.println("Built chat message: " + message);
 		m_packet = new DatagramPacket(message.getBytes(), message.length(), m_address, m_port);
 	}
 
 	public ChatMessage(DatagramPacket packet)
 	{
 		String message = new String(packet.getData(), 0, packet.getLength()).trim();
-//		System.out.println("Deconstructed chat message: " + message);
+		System.out.println("Deconstructed chat message: " + message);
 		String messageComponent[] = message.split(dl);
 		
 		m_address 	= packet.getAddress();
@@ -63,16 +53,6 @@ public class ChatMessage
 	}
 	
 	public int getPort()
-	{
-		return m_port;
-	}
-	
-	public InetAddress getSenderAddress()
-	{
-		return m_address;
-	}
-	
-	public int getSenderPort()
 	{
 		return m_port;
 	}

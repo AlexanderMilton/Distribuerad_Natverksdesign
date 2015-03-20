@@ -3,6 +3,7 @@ package UDPChat.Server;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -49,90 +50,14 @@ public class Server
 
 		secondBeat.drainPermits();
 
-		//Thread clientHandler = new Thread(new ClientConnectionThread());
 		Thread messageHandler = new Thread(new ClientMessageThread());
 		Thread heartbeatHandler = new Thread(new HeartbeatThread());
-//		Thread cartHandler = new Thread(new BringOutYerDeadThread());
+		Thread cartHandler = new Thread(new BringOutYerDeadThread());
 
-		//clientHandler.start();		// TODO: wat
 		messageHandler.start();
-		heartbeatHandler.start();		// TODO: test, fix and start
-//		cartHandler.start();
+		heartbeatHandler.start();
+		cartHandler.start();
 	}
-
-//	// Thread concurrently accepts incoming client connections
-//	private class ClientConnectionThread implements Runnable
-//	{
-//		@Override
-//		public void run()
-//		{
-//			while (true)
-//			{
-//				// Wait for a new client to connect to the server
-//				Socket clientSocket = null;
-//				ChatMessage clientMessage = null;
-//				
-//				try
-//				{
-//					// Accept client socket
-//					clientSocket = m_socket.accept();
-//					System.out.println("Received client connection request");
-//					
-////					// Open streams to the socket
-////					m_writer = new PrintWriter(clientSocket.getOutputStream(), true);
-////					m_reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-//
-//					// Parse the request
-//					clientMessage = new ChatMessage(m_reader.readLine());
-//
-//					addClient(clientSocket, clientMessage);
-//
-//				} catch (IOException e)
-//				{
-//					System.err.println("Error: failed to open and accept client socket");
-//					e.printStackTrace();
-//				}
-//			}
-//		}
-//
-//		private void addClient(Socket socket, ChatMessage chatMessage) throws IOException
-//		{
-//			while (true)
-//			{
-//				try
-//				{
-//					criticalSection.acquire();
-//				} catch (InterruptedException e)
-//				{
-//					continue;
-//				}
-//
-//				// Check for name availability
-//				ClientConnection c;
-//				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-//				{
-//					c = itr.next();
-//					if (c.hasName(chatMessage.getSender()))
-//					{
-//						// There already exists a client with this name
-//						System.out.println("Name already exists, denying request and closing socket");
-//						m_writer.println(new ChatMessage("Server", "Response", "0", "NAME").getString());
-//						socket.close();
-//						criticalSection.release();
-//						return;
-//					}
-//				}
-//
-//				// Add the client
-//				System.out.println("Responding with acknowledgment to client");
-//				m_connectedClients.add(new ClientConnection(chatMessage.getSender(), socket));
-//				m_writer.println(new ChatMessage("Server", "Response", "0", "OK").getString());
-//				sendPublicMessage(chatMessage.getSender() + " joined the chat");
-//				criticalSection.release();
-//				return;
-//			}
-//		}
-//	}
 
 	// Thread handling incoming client messages
 	private class ClientMessageThread implements Runnable
@@ -183,132 +108,135 @@ public class Server
 				// Heartbeat every few seconds
 				try
 				{
-					Thread.sleep(2500);
+					Thread.sleep(250);
 				} catch (InterruptedException e)
 				{
 					System.err.println("Error: failed to sleep");
 					e.printStackTrace();
 				}
 				
-				System.out.println("Sending heartbeat to all clients");
-				
 				// Check if array list is empty
+				if (m_connectedClients.isEmpty())
+					continue;
 				
-				ClientConnection c;
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+				try 
 				{
-					c = itr.next();		// TODO: This causes concurrent modification exceptimust likely be secured behind semaphore
-
-					// Skip already disconnected clients
-					if (c.isDisconnected())
-						continue;
-					
-					try
+					ClientConnection c;
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 					{
-						// Send heartbeat and wait
-						c.sendHeartbeat();
+						c = itr.next();
+
+						// Skip already disconnected clients
+						if (c.isDisconnected())
+							continue;
 						
-						if(!secondBeat.tryAcquire(250, TimeUnit.MILLISECONDS))
+						try
 						{
-							// No heartbeat received
-//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
-							c.decrementPulseCounter();
+							// Send heartbeat and wait
+							c.sendHeartbeat();
 							
-							// Client can survive 10 missed beats before being disconnected
-							if (c.getPulseCounter() <= 0)
+							if(!secondBeat.tryAcquire(250, TimeUnit.MILLISECONDS))
 							{
-								// No response for 10 beats
-								System.out.println(c.getName() + " missing pulse, disconnecting");
-								disconnect(c.getName());
+								// No heartbeat received
+								System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
+								c.decrementPulseCounter();
+								
+								// Client can survive 10 missed beats before being disconnected
+								if (c.getPulseCounter() <= 0)
+								{
+									// No response for 10 beats
+									System.out.println(c.getName() + " has no pulse, disconnecting");
+									disconnect(c.getName());
+									continue;
+								}
+							}
+							else
+							{
+								// Second heartbeat acquired
+								c.resetPulseCounter();
 								continue;
 							}
-						}
-						else
+						} catch (InterruptedException e)
 						{
-							// Second heartbeat acquired
-							System.out.println("Received heartbeat from " + c.getName());
-							c.resetPulseCounter();
+							System.err.println("Error: heart skipped a beat");
+							e.printStackTrace();
 							continue;
 						}
-					} catch (InterruptedException e)
-					{
-						System.err.println("Error: heart skipped a beat");
-						e.printStackTrace();
-						continue;
 					}
+				} catch (ConcurrentModificationException e)
+				{
+					System.out.println("Error: concurrent modification exception, restart heartbeat loop");
+					continue;
 				}
 			}
 		}
 	}
 
-//	// Remove disconnected clients
-//	public class BringOutYerDeadThread implements Runnable
-//	{
-//		@Override
-//		public void run()
-//		{
-//			while (true)
-//			{
-//				try
-//				{
-//					// Sleep for a few seconds
-//					Thread.sleep(1000);
-//
-//					// Skip if empty
-//					if (m_connectedClients.isEmpty())
-//						continue;
-//
-//					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
-//					ClientConnection c;
-//					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
-//					{
-//						c = itr.next();
-//						if (c.isDisconnected())
-//						{
-//							deadClients.add(c);
-//						}
-//					}
-//
-//					// Skip if empty
-//					if (deadClients.isEmpty())
-//						continue;
-//
-//					// Lock critical section
-//					criticalSection.acquire();
-//
-//					// Remove clients
-//					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
-//					{
-//						c = itr.next();
-//						String name = c.getName();
-//						m_connectedClients.remove(c);
-//						sendPublicMessage(name + " disconnected");
-//					}
-//
-//					// Release critical section
-//					criticalSection.release();
-//
-//				} catch (InterruptedException e)
-//				{
-//					System.err.println("Error: disconnection handler thread interrupted");
-//					e.printStackTrace();
-//				}
-//			}
-//		}
-//	}
+	// Remove disconnected clients
+	public class BringOutYerDeadThread implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			while (true)
+			{
+				try
+				{
+					// Sleep for a few seconds
+					Thread.sleep(1000);
+
+					// Skip if empty
+					if (m_connectedClients.isEmpty())
+						continue;
+
+					ArrayList<ClientConnection> deadClients = new ArrayList<ClientConnection>();
+					ClientConnection c;
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						if (c.isDisconnected())
+						{
+							deadClients.add(c);
+						}
+					}
+
+					// Skip if empty
+					if (deadClients.isEmpty())
+						continue;
+
+					// Lock critical section
+					criticalSection.acquire();
+
+					// Remove clients
+					for (Iterator<ClientConnection> itr = deadClients.iterator(); itr.hasNext();)
+					{
+						c = itr.next();
+						String name = c.getName();
+						m_connectedClients.remove(c);
+						sendPublicMessage(name + " disconnected");
+					}
+
+					// Release critical section
+					criticalSection.release();
+
+				} catch (InterruptedException e)
+				{
+					System.err.println("Error: disconnection handler thread interrupted");
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 
 	private void handleMessage(ChatMessage message)
-	{
-
-		System.out.println("Handling message \"" + message.getText() + "\"");
-		
+	{	
 		// Acknowledges message and returns true if message has not already been handled
 		if(acknowledge(message.getSender(), message.getTimeStamp()))
 		{
 			switch (message.getType())
 			{
 			case 1:		// "connect"
-				connect(message.getSender(), message.getSenderAddress(), message.getSenderPort());
+				connect(message.getSender(), message.getAddress(), message.getPort());
 				break;
 
 			case 2:		// "disconnect"
@@ -373,7 +301,7 @@ public class Server
 			c = itr.next();
 			if (c.hasName(sender))
 			{
-				sendPrivateMessage(sender, "You have been disconnected");
+//				sendPrivateMessage(sender, "You have been disconnected");
 				c.markAsDisconnected();
 			}
 		}
