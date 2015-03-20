@@ -149,10 +149,10 @@ public class Server
 					byte[] buf = new byte[256];
 					DatagramPacket packet = new DatagramPacket(buf, buf.length);
 					m_socket.receive(packet);
-
-					criticalSection.release();
 					
 					handleMessage(new ChatMessage(packet));
+
+					criticalSection.release();
 
 				} catch (InterruptedException e)
 				{
@@ -183,7 +183,7 @@ public class Server
 				// Heartbeat every few seconds
 				try
 				{
-					Thread.sleep(2500);
+					Thread.sleep(2000);
 				} catch (InterruptedException e)
 				{
 					System.err.println("Error: failed to sleep");
@@ -194,45 +194,61 @@ public class Server
 				
 				// Check if array list is empty
 				
-				ClientConnection c;
+				ClientConnection c = null;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();)
 				{
-					c = itr.next();		// TODO: This causes concurrent modification exceptimust likely be secured behind semaphore
-
-					// Skip already disconnected clients
-					if (c.isDisconnected())
-						continue;
-					
 					try
 					{
-						// Send heartbeat and wait
-						c.sendHeartbeat();
-						
-						if(!secondBeat.tryAcquire(250, TimeUnit.MILLISECONDS))
+						criticalSection.acquire();
+
+						c = itr.next();		// TODO: This causes concurrent modification exception - must likely be secured behind semaphore
+
+						if (c.equals(null))
+							continue;
+
+						// Skip already disconnected clients
+						if (c.isDisconnected())
+							continue;
+
+						try
 						{
-							// No heartbeat received
-//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
-							c.decrementPulseCounter();
-							
-							// Client can survive 10 missed beats before being disconnected
-							if (c.getPulseCounter() <= 0)
+							// Send heartbeat and wait
+							c.sendHeartbeat();
+
+							if(!secondBeat.tryAcquire(250, TimeUnit.MILLISECONDS))
 							{
-								// No response for 10 beats
-								System.out.println(c.getName() + " missing pulse, disconnecting");
-								disconnect(c.getName());
+								// No heartbeat received
+								//							System.out.println("Failed to receive heartbeat from " + c.getName() + ", " + c.getPulseCounter() + " attempts remain");
+								c.decrementPulseCounter();
+
+								// Client can survive 10 missed beats before being disconnected
+								if (c.getPulseCounter() <= 0)
+								{
+									// No response for 10 beats
+									System.out.println(c.getName() + " missing pulse, disconnecting");
+									disconnect(c.getName());
+									continue;
+								}
+							}
+							else
+							{
+								// Second heartbeat acquired
+								System.out.println("Received heartbeat from " + c.getName());
+								c.resetPulseCounter();
 								continue;
 							}
-						}
-						else
+							
+						criticalSection.release();
+							
+						} catch (InterruptedException e)
 						{
-							// Second heartbeat acquired
-							System.out.println("Received heartbeat from " + c.getName());
-							c.resetPulseCounter();
+							System.err.println("Error: heart skipped a beat");
+							e.printStackTrace();
 							continue;
 						}
 					} catch (InterruptedException e)
 					{
-						System.err.println("Error: heart skipped a beat");
+						System.err.println("Error: critical section semaphore interrupted");
 						e.printStackTrace();
 						continue;
 					}
